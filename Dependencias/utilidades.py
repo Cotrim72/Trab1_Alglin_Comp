@@ -69,3 +69,49 @@ def check_matriz_diagonal_dominante(A:list[list]):
         if abs(A[i][i]) < soma:
             return "Não é uma matriz diagonal dominante"
     return "A matriz é diagonal dominante"
+
+def ler_matriz_market(caminho: str) -> list[list[float]]:
+    '''
+    Lê uma matriz no formato MatrixMarket (coordenada) e retorna uma matriz densa como list[list[float]].
+    Suporta os tipos de simetria 'general' e 'symmetric' (no caso simétrico, espelha a parte triangular armazenada).
+    '''
+    with open(caminho, 'r') as f:
+        linhas = f.readlines()
+
+    # Cabeçalho: %%MatrixMarket matrix coordinate real <symmetry>
+    cabecalho = linhas[0].strip().lower().split()
+    if len(cabecalho) < 5 or cabecalho[0] != '%%matrixmarket' or cabecalho[2] != 'coordinate':
+        raise ValueError(f'Cabeçalho MatrixMarket inválido ou não suportado: {linhas[0].strip()}')
+    simetrica = cabecalho[4] in ('symmetric', 'skew-symmetric')
+    anti_simetrica = cabecalho[4] == 'skew-symmetric'
+
+    # Pular comentários e linhas em branco até a linha de dimensões
+    i = 1
+    while i < len(linhas) and (linhas[i].startswith('%') or linhas[i].strip() == ''):
+        i += 1
+
+    partes = linhas[i].split()
+    n_linhas = int(partes[0])
+    n_colunas = int(partes[1])
+    nnz = int(partes[2])
+
+    A = [[0.0]*n_colunas for _ in range(n_linhas)]
+
+    # Entradas: 'linha coluna valor' com índices 1-based
+    entradas_lidas = 0
+    k = i + 1
+    while entradas_lidas < nnz and k < len(linhas):
+        linha_txt = linhas[k].strip()
+        k += 1
+        if linha_txt == '' or linha_txt.startswith('%'):
+            continue
+        partes = linha_txt.split()
+        linha = int(partes[0]) - 1
+        coluna = int(partes[1]) - 1
+        valor = float(partes[2])
+        A[linha][coluna] = valor
+        if simetrica and linha != coluna:
+            A[coluna][linha] = -valor if anti_simetrica else valor
+        entradas_lidas += 1
+
+    return A
