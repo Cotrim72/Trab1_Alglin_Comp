@@ -19,6 +19,9 @@ class TestesUmaMatriz:
 
         self.caminho_saida = caminho_saida
 
+        # Cada elemento: {'metodo', 'erro', 'tempo', 'iteracoes' (None se direto), 'mensagem' (None se ok)}
+        self.resultados: list[dict] = []
+
     def sistema(self):
         'Retorna o sistema linear que vamos resolver.'
         return SistemaLinear(self.A, self.b, self.x_inicial)
@@ -49,19 +52,32 @@ class TestesUmaMatriz:
         s = self.sistema()
 
         inicio = time.time()
-        getattr(s, metodo)() # Chamando o método
+        res = getattr(s, metodo)() # Chamando o método
         final = time.time()
+
+        if res != None:
+            r.write(res)
+            r.skipline()
 
         x = s.x
         r.write('Solução x:')
         r.write(x)
 
         r.skipline()
-        r.write(f'Erro da solução (|Ax - b|): {erro_solucao(self.A, x, self.b)}')
+        erro = erro_solucao(self.A, x, self.b)
+        r.write(f'Erro da solução (|Ax - b|): {erro}')
 
         r.write(f'Tempo de execução: {final - inicio}')
 
         r.generate_file(caminho_saida)
+
+        self.resultados.append({
+            'metodo': metodo,
+            'erro': erro,
+            'tempo': final - inicio,
+            'iteracoes': None,
+            'mensagem': res,
+        })
 
     def teste_metodo_iterativo(self, metodo: str, caminho_saida: str):
         r = Results()
@@ -89,19 +105,28 @@ class TestesUmaMatriz:
         r.write(x)
 
         r.skipline()
-        r.write(f'Erro da solução (|Ax - b|): {erro_solucao(self.A, x, self.b)}')
+        erro = erro_solucao(self.A, x, self.b)
+        r.write(f'Erro da solução (|Ax - b|): {erro}')
         r.write(f'Tempo de execução: {final - inicio}')
 
         r.generate_file(caminho_saida)
 
-        # Gerar gráfico do log10 do erro em função da iteração
-        iteracoes = [l.iteracao for l in logs]
-        erros = [log10(l.erro) for l in logs]
-        
+        self.resultados.append({
+            'metodo': metodo,
+            'erro': erro,
+            'tempo': final - inicio,
+            'iteracoes': len(logs),
+            'mensagem': res,
+        })
+
+        # Gerar gráfico do log10 do resíduo relativo em função da iteração
+        iteracoes = [l.iteracao for l in logs if l.residuo > 0]
+        log_residuos = [log10(l.residuo) for l in logs if l.residuo > 0]
+
         plt.figure()
-        plt.plot(iteracoes, erros)
+        plt.plot(iteracoes, log_residuos)
         plt.xlabel('Iteração')
-        plt.ylabel('log10(Erro relativo)')
+        plt.ylabel('log10(R) = log10(||x_novo - x|| / ||x_novo||)')
         plt.title(f'Convergência - {metodo}')
         
         nome_grafico = caminho_saida.replace('.txt', '.png')
@@ -115,9 +140,11 @@ class TestesUmaMatriz:
 
         self.teste_metodo_direto('eliminacao_gaussiana', f'{pasta}/Resultados/eliminacao_gaussiana.txt')
         self.teste_metodo_direto('fatoracao_lu', f'{pasta}/Resultados/fatoracao_lu.txt')
+        self.teste_metodo_direto('cholesky', f'{pasta}/Resultados/cholesky.txt')
 
         self.teste_metodo_iterativo('jacobi', f'{pasta}/Resultados/jacobi.txt')
         self.teste_metodo_iterativo('gauss_seidel', f'{pasta}/Resultados/gauss_seidel.txt')
 
         self.teste_metodo_direto('eliminacao_gaussiana_numpy', f'{pasta}/Bibliotecas/eliminacao_gaussiana.txt')
         self.teste_metodo_direto('fatoracao_lu_scipy', f'{pasta}/Bibliotecas/fatoracao_lu.txt')
+        self.teste_metodo_direto('cholesky_scipy', f'{pasta}/Bibliotecas/cholesky.txt')

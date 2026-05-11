@@ -1,0 +1,481 @@
+\documentclass[10pt,aspectratio=169]{beamer}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[portuguese]{babel}
+\usepackage{amsmath, amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{appendixnumberbeamer}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.16}
+
+% ===== Tema metropolis =====
+\usetheme[
+  background=light,
+  progressbar=foot,
+  numbering=fraction,
+  block=fill,
+  sectionpage=progressbar,
+]{metropolis}
+
+% ===== Paleta UFRJ (azul) =====
+\definecolor{ufrjblue}{HTML}{1E3A8A}
+\definecolor{ufrjlight}{HTML}{3B82F6}
+\definecolor{accent}{HTML}{F59E0B}
+\setbeamercolor{title separator}{fg=ufrjblue}
+\setbeamercolor{progress bar}{fg=ufrjblue}
+\setbeamercolor{alerted text}{fg=ufrjblue}
+\setbeamercolor{frametitle}{bg=ufrjblue,fg=white}
+\setbeamercolor{section in toc}{fg=ufrjblue}
+
+% ===== Configuração dos blocos de código =====
+\definecolor{codebg}{HTML}{F5F5F5}
+\definecolor{codekey}{HTML}{1E3A8A}
+\definecolor{codecmt}{HTML}{6B7280}
+\lstset{
+  basicstyle=\ttfamily\scriptsize,
+  backgroundcolor=\color{codebg},
+  frame=none,
+  framesep=6pt,
+  language=Python,
+  keywordstyle=\color{codekey}\bfseries,
+  commentstyle=\color{codecmt}\itshape,
+  breaklines=true,
+  showstringspaces=false,
+  xleftmargin=0.4em,
+}
+
+\title{Solução de Sistemas de Equações Lineares}
+\subtitle{Trabalho 1 --- COC473 Álgebra Linear Computacional}
+\author{Leonardo Peres Albertazzi Drummond \\ \textit{\small(adicionar demais integrantes do grupo)}}
+\institute{ECI / Politécnica --- UFRJ}
+\date{1\textsuperscript{o} Semestre de 2026}
+\titlegraphic{\hfill\vspace{4em}}
+
+\begin{document}
+
+\maketitle
+
+\begin{frame}{Agenda}
+  \setbeamertemplate{section in toc}[sections numbered]
+  \tableofcontents[hideallsubsections]
+\end{frame}
+
+% ============================================================
+\section{Introdução dos métodos}
+% ============================================================
+
+\begin{frame}{O problema}
+  Resolver sistemas lineares quadrados
+  \[ A\,\mathbf{x} = \mathbf{b}, \qquad A \in \mathbb{R}^{n\times n}. \]
+
+  \vspace{0.6em}
+  Em problemas reais (engenharia estrutural, redes elétricas, simulação de PDEs\dots), $n$ pode ser de centenas a milhões. A escolha do método importa.
+
+  \vspace{0.6em}
+  Duas grandes famílias:
+  \begin{itemize}
+    \item \alert{Métodos diretos} --- fatoram $A$ em uma forma triangular ou produto. Resolvem em \emph{um único passo} (fatorar + substituir). Resultado é exato a menos de erros de ponto flutuante.
+    \item \alert{Métodos iterativos} --- partem de $\mathbf{x}^{(0)}$ e refinam progressivamente. Param ao satisfazer uma \emph{tolerância} ou estouro do número máximo de iterações.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Métodos diretos --- o que cada um faz}
+  \begin{block}{Eliminação Gaussiana}
+    Triangulariza $A$ via combinações de linhas, depois retro-substitui. Custo: $\sim 2n^3/3$ operações. Aplicável a \emph{qualquer} matriz não-singular.
+  \end{block}
+
+  \begin{block}{Fatoração LU}
+    Mesma ideia de Gauss, mas guarda a fatoração $A = LU$. Custo idêntico ($\sim 2n^3/3$), mas \alert{vantagem}: resolver com novo $\mathbf{b}$ depois custa só $O(n^2)$ (sem refatorar).
+  \end{block}
+
+  \begin{block}{Decomposição de Cholesky \textit{(extensão)}}
+    Para $A$ \alert{simétrica positiva definida}: $A = L L^\mathsf{T}$. Custo $\sim n^3/3$ --- \alert{metade} de Gauss/LU.
+    \[ \ell_{ii} = \sqrt{\,a_{ii} - \sum_{k<i} \ell_{ik}^{\,2}\,}, \quad \ell_{ji} = \frac{a_{ji} - \sum_{k<i} \ell_{jk}\,\ell_{ik}}{\ell_{ii}} \]
+  \end{block}
+\end{frame}
+
+\begin{frame}{Métodos iterativos --- o que cada um faz}
+  \begin{block}{Jacobi (slide 11 da aula)}
+    Atualiza todas as coordenadas \emph{em paralelo} usando apenas $\mathbf{x}^k$:
+    \[ x_i^{k+1} = \frac{b_i - \sum_{j \ne i} a_{ij}\,x_j^{k}}{a_{ii}} \]
+  \end{block}
+
+  \begin{block}{Gauss-Seidel (slide 16)}
+    \alert{Reaproveita} valores já atualizados na mesma iteração:
+    \[ x_i^{k+1} = \frac{b_i - \sum_{j<i} a_{ij}\,x_j^{k+1} - \sum_{j>i} a_{ij}\,x_j^{k}}{a_{ii}} \]
+    Tende a convergir em \emph{menos iterações} que Jacobi.
+  \end{block}
+
+  \begin{block}{Critério de parada (slides 11 e 16)}
+    \[ R = \frac{\| X^{k+1} - X^{k} \|_2}{\| X^{k+1} \|_2} \le t \qquad \text{ou } k \ge o \text{ (máx.)} \]
+    A cada iteração: grava $(k, R, x)$ em log e gera gráfico $\log(R)\times k$.
+  \end{block}
+\end{frame}
+
+\begin{frame}{Diferenças e quando usar cada um}
+  \begin{table}
+  \centering
+  \scriptsize
+  \begin{tabular}{lcccc}
+    \toprule
+    \textbf{Método} & \textbf{Custo} & \textbf{Requisito em $A$} & \textbf{Convergência} & \textbf{Quando usar} \\
+    \midrule
+    Gauss            & $2n^3/3$ & não-singular        & garantida & qualquer caso \\
+    LU               & $2n^3/3$ & não-singular        & garantida & múltiplos $\mathbf{b}$ \\
+    Cholesky         & $n^3/3$  & SPD                 & garantida & $A$ SPD --- \alert{2$\times$ mais rápido} \\
+    \midrule
+    Jacobi           & $n^2$ / iter & diag.\ dominante & condicional & paralelização \\
+    Gauss-Seidel     & $n^2$ / iter & diag.\ dominante & condicional & memória limitada \\
+    \bottomrule
+  \end{tabular}
+  \end{table}
+
+  \vspace{0.6em}
+  \begin{itemize}
+    \item Diretos: precisão $\sim 10^{-9}$ a $10^{-13}$, custo $O(n^3)$.
+    \item Iterativos: precisão depende da tolerância, custo $O(n^2)$ por iteração --- \alert{podem divergir} se $A$ não for diag.\ dominante.
+  \end{itemize}
+\end{frame}
+
+% ============================================================
+\section{Implementação}
+% ============================================================
+
+\begin{frame}[fragile]{Estrutura do projeto}
+  \begin{lstlisting}[language=,basicstyle=\ttfamily\footnotesize]
+Trab1_Alglin_Comp/
+├── main.py                  # loop sobre 6 matrizes
+├── sistema_linear.py        # classe SistemaLinear (todos os métodos)
+├── testes.py                # orquestra: executa, mede, escreve
+└── Dependencias/
+    ├── utilidades.py        # vetores, ler_matriz_market, ...
+    ├── log.py               # Log(iteracao, residuo, x)
+    ├── results.py           # escreve .txt
+    └── sumario.py           # tabela comparativa
+  \end{lstlisting}
+
+  \vspace{0.6em}
+  \begin{itemize}
+    \item Classe \texttt{SistemaLinear} encapsula $A$, $\mathbf{b}$, $\mathbf{x}$ e cada método altera \texttt{self.x}.
+    \item Cada método direto tem também uma \alert{versão com biblioteca} para comparação (\texttt{np.linalg.solve}, \texttt{scipy.linalg.lu\_factor}, \texttt{scipy.linalg.cho\_factor}).
+    \item Métodos iterativos convertidos para laço \texttt{for} (em vez de recursão) para escalabilidade.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Núcleo dos métodos puros}
+  \alert{Fatoração LU} --- algoritmo dos slides 23-24:
+  \begin{lstlisting}
+for i in range(n):
+    for j in range(i+1, n):
+        mult = U[j][i] / U[i][i]
+        L[j][i] = mult
+        for k in range(i, n):
+            U[j][k] -= mult * U[i][k]
+  \end{lstlisting}
+
+  \vspace{0.4em}
+  \alert{Cholesky} --- algoritmo dos slides 33-34:
+  \begin{lstlisting}
+for i in range(n):
+    soma_diag = self.A[i][i] - sum(L[i][k]**2 for k in range(i))
+    if soma_diag <= 0:
+        return "Matriz não é simétrica positiva definida"
+    L[i][i] = soma_diag ** 0.5
+    for j in range(i + 1, n):
+        soma = self.A[j][i] - sum(L[j][k]*L[i][k] for k in range(i))
+        L[j][i] = soma / L[i][i]
+  \end{lstlisting}
+
+  \vspace{0.3em}
+  \footnotesize Os iterativos seguem fórmulas diretas dos slides 11 e 16, sem bibliotecas.
+\end{frame}
+
+\begin{frame}{Verificação, logging e gráficos}
+  \begin{block}{Verificação da correção (em todos os métodos)}
+    Após obtenção de $\mathbf{x}$: \quad $\text{erro} = \|\mathbf{b} - A\mathbf{x}\|_2$
+  \end{block}
+
+  \begin{block}{Log por iteração (apenas iterativos)}
+    Em cada passo $k$, grava-se $(k, R^{(k)}, \mathbf{x}^{(k)})$ no objeto \texttt{Log}.
+    Após o laço, \texttt{matplotlib} gera o gráfico $\log_{10}(R) \times k$ em \texttt{.png}.
+  \end{block}
+
+  \begin{block}{Saída para arquivos}
+    Cada teste produz um \texttt{.txt} contendo: $\mathbf{x}$ final, erro, tempo, log completo.
+    Ao final do \texttt{main.py}, \texttt{gerar\_sumario()} consolida tudo em Markdown.
+  \end{block}
+\end{frame}
+
+% ============================================================
+\section{Resultados}
+% ============================================================
+
+\begin{frame}{Matrizes utilizadas}
+  Seis matrizes do \alert{Matrix Market}, conforme PDF \emph{Solvers Benchmarks}:
+
+  \vspace{0.5em}
+  \begin{table}
+  \centering
+  \small
+  \begin{tabular}{lrrl}
+    \toprule
+    \textbf{Matriz} & $\boldsymbol{n}$ & \textbf{cond$(A)$} & \textbf{Tipo} \\
+    \midrule
+    bcsstk01  & 48   & $8{,}8 \times 10^{5}$ & rigidez estrutural \\
+    bcsstk03  & 112  & $6{,}8 \times 10^{6}$ & rigidez estrutural \\
+    bcsstk04  & 132  & $2{,}3 \times 10^{6}$ & rigidez estrutural \\
+    494\_bus  & 494  & $2{,}4 \times 10^{6}$ & sistema de potência \\
+    m1        & 675  & $7{,}7 \times 10^{6}$ & SPD diag.\ dominante \\
+    1138\_bus & 1138 & $8{,}6 \times 10^{6}$ & sistema de potência \\
+    \bottomrule
+  \end{tabular}
+  \end{table}
+
+  \vspace{0.5em}
+  Todas \alert{SPD} (autovalores positivos), \alert{mal-condicionadas}, dois domínios de aplicação, três ordens de grandeza em $n$.
+\end{frame}
+
+\begin{frame}{Resultados --- métodos diretos}
+  \textbf{Tempo (s):}
+  \begin{table}
+  \centering
+  \scriptsize
+  \begin{tabular}{lrrr}
+    \toprule
+    \textbf{Matriz} & \textbf{Gauss} & \textbf{LU} & \textbf{Cholesky} \\
+    \midrule
+    bcsstk01  & 0{,}003 & 0{,}003 & 0{,}003 \\
+    bcsstk04  & 0{,}059 & 0{,}057 & 0{,}040 \\
+    494\_bus  & 3{,}19  & 2{,}95  & 1{,}75  \\
+    m1        & 8{,}18  & 7{,}60  & \alert{4{,}47} \\
+    1138\_bus & 39{,}32 & 36{,}56 & \alert{21{,}59} \\
+    \bottomrule
+  \end{tabular}
+  \end{table}
+
+  \vspace{0.5em}
+  \begin{itemize}
+    \item Erro $\|A\mathbf{x} - \mathbf{b}\|$ na ordem de $10^{-13}$ a $10^{-9}$ --- solução essencialmente exata.
+    \item \alert{Cholesky $\approx 55\%$ do tempo de Gauss/LU} na matriz maior, conforme a teoria $n^3/3$ vs $2n^3/3$.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Resultados --- métodos iterativos}
+  \textbf{$t = 10^{-3}$, $o = 50$ iterações máx.}
+
+  \vspace{0.4em}
+  \begin{table}
+  \centering
+  \scriptsize
+  \begin{tabular}{lll}
+    \toprule
+    \textbf{Matriz} & \textbf{Jacobi} & \textbf{Gauss-Seidel} \\
+    \midrule
+    bcsstk01  & 50 iter --- erro $1{,}77\times 10^{9}$  & 50 iter --- erro $2{,}01\times 10^{5}$ \\
+    \alert{bcsstk03}  & \alert{50 iter --- erro $6{,}26\times 10^{23}$~(!!)} & 50 iter --- erro $3{,}38\times 10^{8}$ \\
+    bcsstk04  & 50 iter --- erro $1{,}10\times 10^{12}$ & 50 iter --- erro $7{,}51\times 10^{2}$ \\
+    494\_bus  & 50 iter --- erro $24{,}6$               & 50 iter --- erro $42{,}5$ \\
+    \alert{m1}        & \alert{17 iter --- $R<t$} (erro $12{,}5$) & \alert{13 iter --- $R<t$} (erro $12{,}4$) \\
+    1138\_bus & 50 iter --- erro $35{,}7$               & 50 iter --- erro $55{,}5$ \\
+    \bottomrule
+  \end{tabular}
+  \end{table}
+
+  \vspace{0.6em}
+  \begin{itemize}
+    \item Nenhuma matriz é diagonal dominante $\Rightarrow$ convergência \alert{não é garantida}.
+    \item Em 5 das 6, \alert{divergem} (erro absoluto explode).
+    \item Em m1, satisfazem o critério $R<t$ mas \alert{ficam num platô longe da solução}.
+    \item \textbf{12 gráficos $\log_{10}(R) \times k$ gerados} em \texttt{Resultados/<matriz>/Resultados/*.png}.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Análise: o critério da aula pode enganar}
+  Em \alert{m1} a história é mais sutil:
+
+  \vspace{0.5em}
+  \begin{itemize}
+    \item O critério $R = \|\Delta x\|/\|x\| < 10^{-3}$ é atingido em \alert{13--17 iterações}.
+    \item Mas $\|A\mathbf{x} - \mathbf{b}\| \approx 12{,}5$ (vs.\ $10^{-9}$ dos diretos).
+    \item O iterado \alert{estaciona num platô} sem chegar à solução verdadeira.
+  \end{itemize}
+
+  \vspace{0.6em}
+  Esse é o fenômeno descrito nos slides 22--25 de \texttt{ALC\_MC\_04} (\emph{sistemas mal-condicionados}): pequena variação em $\mathbf{b}$ causa grande variação em $\mathbf{x}$.
+
+  \begin{alertblock}{Lição}
+    O critério $R$ é coerente com a definição da aula, mas pode mascarar a falha em sistemas mal-condicionados. \alert{Métodos diretos são a escolha segura} nesses casos.
+  \end{alertblock}
+\end{frame}
+
+% ============================================================
+\section{Comparação: códigos vs bibliotecas}
+% ============================================================
+
+\begin{frame}{Bibliotecas vs Python puro --- tempos}
+  Para a matriz maior testada (\texttt{1138\_bus}, $n = 1138$):
+
+  \vspace{0.5em}
+  \begin{table}
+  \centering
+  \small
+  \begin{tabular}{lrr}
+    \toprule
+    \textbf{Implementação} & \textbf{Tempo (s)} & \textbf{Ganho} \\
+    \midrule
+    Eliminação gaussiana (Python puro) & 39{,}3   & $1\times$ \\
+    \texttt{np.linalg.solve}            & 0{,}062 & \alert{$632\times$} \\
+    Fatoração LU (Python puro)         & 36{,}6   & $1\times$ \\
+    \texttt{scipy.linalg.lu\_solve}    & 0{,}479  & \alert{$76\times$} \\
+    Cholesky (Python puro)              & 21{,}6  & $1\times$ \\
+    \texttt{scipy.linalg.cho\_solve}    & 0{,}069 & \alert{$313\times$} \\
+    \bottomrule
+  \end{tabular}
+  \end{table}
+
+  \vspace{0.6em}
+  Ganho vem de BLAS/LAPACK compilados (C/Fortran com SIMD) vs.\ laços Python interpretados.
+\end{frame}
+
+\begin{frame}{Bibliotecas vs Python puro --- precisão}
+  Erro $\|A\mathbf{x} - \mathbf{b}\|$ por método em \texttt{1138\_bus}:
+
+  \vspace{0.5em}
+  \begin{table}
+  \centering
+  \small
+  \begin{tabular}{lrr}
+    \toprule
+    \textbf{Método} & \textbf{Python puro} & \textbf{Biblioteca} \\
+    \midrule
+    Eliminação Gaussiana & $5{,}26 \times 10^{-9}$ & $2{,}27 \times 10^{-9}$ \\
+    Fatoração LU         & $5{,}26 \times 10^{-9}$ & $2{,}27 \times 10^{-9}$ \\
+    Cholesky             & $2{,}50 \times 10^{-9}$ & $2{,}33 \times 10^{-9}$ \\
+    \bottomrule
+  \end{tabular}
+  \end{table}
+
+  \vspace{0.8em}
+  \begin{alertblock}{Conclusão}
+    Precisão da \alert{mesma ordem} ($10^{-9}$) entre versão pura e biblioteca.
+    A diferença é \alert{puramente de eficiência}, não de algoritmo --- confirma que a implementação pura está \alert{correta}.
+  \end{alertblock}
+\end{frame}
+
+\begin{frame}{Cholesky confirma a teoria}
+  Teoria: $\dfrac{t_\text{Cho}}{t_\text{Gauss}} \to \dfrac{n^3/3}{2n^3/3} = \dfrac{1}{2}$
+
+  \vspace{0.5em}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.42\textwidth}
+      \begin{table}
+      \centering
+      \small
+      \begin{tabular}{lrc}
+        \toprule
+        \textbf{Matriz} & $\boldsymbol{n}$ & \textbf{Razão} \\
+        \midrule
+        bcsstk03  & 112  & 0{,}63 \\
+        bcsstk04  & 132  & 0{,}67 \\
+        494\_bus  & 494  & 0{,}55 \\
+        m1        & 675  & 0{,}55 \\
+        \alert{1138\_bus} & \alert{1138} & \alert{0{,}549} \\
+        \bottomrule
+      \end{tabular}
+      \end{table}
+    \end{column}
+    \begin{column}{0.55\textwidth}
+      \begin{tikzpicture}
+        \begin{axis}[
+          width=\textwidth, height=4.6cm,
+          xlabel={$n$},
+          ylabel={$t_\text{Cho}/t_\text{Gauss}$},
+          ymin=0.4, ymax=0.75,
+          xmin=0, xmax=1200,
+          grid=major,
+          axis line style={->,thin,gray},
+          tick style={gray},
+          legend pos=north east,
+        ]
+        \addplot[ufrjblue,mark=*,thick] coordinates {
+          (112,0.63) (132,0.67) (494,0.55) (675,0.55) (1138,0.549)
+        };
+        \addplot[accent,dashed,thick,domain=0:1200] {0.5};
+        \legend{medido, $\tfrac{1}{2}$ teórico}
+        \end{axis}
+      \end{tikzpicture}
+    \end{column}
+  \end{columns}
+
+  \vspace{0.4em}
+  \small Para $n$ grande, a razão converge ao valor teórico $0{,}5$. A teoria do slide 30 de \texttt{ALC\_MC\_03} é \alert{confirmada experimentalmente}.
+\end{frame}
+
+% ============================================================
+\section{Conclusão}
+% ============================================================
+
+\begin{frame}{Conclusões}
+  \begin{enumerate}
+    \item \alert{Especificação cumprida:} 4 métodos puros + 3 com biblioteca + Cholesky extra; verificação, tempo, log, gráfico --- tudo automático e reproduzível.
+    \item \alert{Cholesky confirma a teoria:} na maior matriz, $0{,}549\times$ o tempo de Gauss/LU --- a razão $\tfrac{1}{2}$ prevista.
+    \item \alert{Iterativos clássicos falham} nessas matrizes reais (nenhuma é diagonal dominante).
+      Em 5/6 divergem; em 1, satisfazem o critério mas longe da solução verdadeira.
+    \item \alert{Bibliotecas} são \textbf{100--600$\times$} mais rápidas, mas \alert{mesma precisão} que a versão pura --- confirma a correção da implementação.
+    \item Para matrizes SPD mal-condicionadas como as testadas, métodos diretos (especialmente \textbf{Cholesky}) são a \alert{escolha prática}.
+  \end{enumerate}
+\end{frame}
+
+\begin{frame}[fragile]{Como reproduzir}
+  \begin{lstlisting}[language=bash,basicstyle=\ttfamily\small]
+python main.py
+  \end{lstlisting}
+
+  \vspace{0.5em}
+  \begin{itemize}
+    \item Lê as 6 matrizes em \texttt{Matrizes de Teste/}
+    \item Roda os 8 métodos em cada uma
+    \item Gera \texttt{Resultados/<matriz>/\{Resultados,Bibliotecas\}/*.txt} $+$ \texttt{.png}
+    \item Gera \texttt{Resultados/sumario.txt} (Markdown comparativo)
+  \end{itemize}
+
+  \vspace{0.8em}
+  \alert{Tempo total:} $\sim 110$~s na máquina de teste.
+
+  \vspace{0.6em}
+  \small Para adicionar uma matriz: dropar \texttt{.mtx} em \texttt{Matrizes de Teste/} e incluir na lista em \texttt{main.py}.
+\end{frame}
+
+\begin{frame}[standout]
+  Obrigado!\\[0.6em]
+  {\large Perguntas?}
+\end{frame}
+
+\appendix
+
+\begin{frame}{Apêndice --- Arquivos do repositório}
+  \small
+  Documentos:
+  \begin{itemize}
+    \item \texttt{RELATORIO.md} --- relatório completo
+    \item \texttt{APRESENTACAO.md} --- versão Markdown desta apresentação
+    \item \texttt{Resultados/sumario.txt} --- tabela comparativa
+    \item \texttt{Matrizes de Teste/} --- matrizes utilizadas
+  \end{itemize}
+
+  \vspace{0.6em}
+  Código fonte:
+  \begin{itemize}
+    \item \texttt{sistema\_linear.py} --- todos os métodos
+    \item \texttt{testes.py} --- orquestração
+    \item \texttt{main.py} --- entrypoint
+    \item \texttt{Dependencias/} --- utilitários
+  \end{itemize}
+\end{frame}
+
+\end{document}

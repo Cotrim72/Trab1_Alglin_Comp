@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.linalg import lu_factor, lu_solve
+from scipy.linalg import lu_factor, lu_solve, cho_factor, cho_solve
 from scipy.sparse.linalg import gmres
 
 from Dependencias.utilidades import sub_vetor, modulo_vetor, soma_vetor, prod_vetor_escalar
@@ -134,55 +134,92 @@ class SistemaLinear:
         x = lu_solve((lu, piv), b)
 
         self.x = x
-    
-    def jacobi(self, t: float, o: int, n: int = 0):
-        'Altera x, resolvendo o sistema pelo método de Jacobi.'
-        n += 1
-        if n > o:
-            return "Ultrapassou o número máximo de operações"
-        
+
+    def cholesky(self):
+        'Altera x, resolvendo o sistema pela decomposição de Cholesky A = L L^T. Aplica-se apenas a matrizes simétricas positivas definidas; retorna mensagem de erro caso contrário.'
+        n = self.tamanho()
+
+        for i in range(n):
+            for j in range(i + 1, n):
+                if self.A[i][j] != self.A[j][i]:
+                    return "Matriz não é simétrica positiva definida"
+
+        L = [[0.0]*n for _ in range(n)]
+        for i in range(n):
+            soma_diag = self.A[i][i] - sum(L[i][k]**2 for k in range(i))
+            if soma_diag <= 0:
+                return "Matriz não é simétrica positiva definida"
+            L[i][i] = soma_diag ** 0.5
+            for j in range(i + 1, n):
+                soma = self.A[j][i] - sum(L[j][k]*L[i][k] for k in range(i))
+                L[j][i] = soma / L[i][i]
+
+        LT = [[L[j][i] for j in range(n)] for i in range(n)]
+
+        fl = SistemaLinear(L, self.b)
+        fl.substituiçao_para_frente()
+        y = fl.x
+
+        fu = SistemaLinear(LT, y)
+        fu.substituicao_para_tras()
+        self.x = fu.x
+
+    def cholesky_scipy(self):
+        'Altera x, resolvendo o sistema com a decomposição de Cholesky da biblioteca scipy.'
+        A = np.array(self.A)
+        b = np.array(self.b)
+        if not np.array_equal(A, A.T):
+            return "Matriz não é simétrica positiva definida"
+        try:
+            c, low = cho_factor(A)
+        except np.linalg.LinAlgError:
+            return "Matriz não é simétrica positiva definida"
+        self.x = cho_solve((c, low), b)
+
+    def jacobi(self, t: float, o: int):
+        'Altera x, resolvendo o sistema pelo método de Jacobi. Para quando o resíduo R = ||x_novo - x|| / ||x_novo|| cai abaixo de t ou após o iterações.'
         b = self.b
-        x = self.x
-        x_novo = [0]*len(x)
-        for i in range(len(x)):
-            soma = 0
-            for j in range(len(x)):
-                if i != j:
-                    soma += self.A[i][j]*x[j]
-            x_novo[i] = (b[i] - soma)/self.A[i][i]
-        R = modulo_vetor(sub_vetor(x_novo,x))/modulo_vetor(x_novo)
 
-        self.logs.append(Log(n, R, x_novo))
-        self.x = x_novo
+        for n in range(1, o + 1):
+            x = self.x
+            x_novo = [0]*len(x)
+            for i in range(len(x)):
+                soma = 0
+                for j in range(len(x)):
+                    if i != j:
+                        soma += self.A[i][j]*x[j]
+                x_novo[i] = (b[i] - soma)/self.A[i][i]
+            residuo = modulo_vetor(sub_vetor(x_novo, x)) / modulo_vetor(x_novo)
 
-        if R <= t:
-            return
+            self.logs.append(Log(n, residuo, x_novo))
+            self.x = x_novo
+
+            if residuo <= t:
+                return
+
+        return "Ultrapassou o número máximo de iterações"
     
-        return self.jacobi(t, o, n) # Vai retornar None ou a mensagem de erro
-    
-    def gauss_seidel(self, t: float, o: int, n: int = 0):
-        'Altera x, resolvendo o sistema pelo método de Gauss-Seidel.'
-        n += 1
-        if n > o:
-            return "Ultrapassou o número máximo de operações"
-        
+    def gauss_seidel(self, t: float, o: int):
+        'Altera x, resolvendo o sistema pelo método de Gauss-Seidel. Para quando o resíduo R = ||x_novo - x|| / ||x_novo|| cai abaixo de t ou após o iterações.'
         b = self.b
-        x = self.x
-        x_novo = [0]*len(x)
-        for i in range(len(x)):
-            soma_new = 0
-            soma_old = 0
-            for j in range(i):
-                soma_new += self.A[i][j]*x_novo[j]
-            for j in range(i+1,len(x)):
-                soma_old += self.A[i][j]*x[j]
-            x_novo[i] = (b[i] - soma_new - soma_old)/self.A[i][i]
-        R = modulo_vetor(sub_vetor(x_novo,x))/modulo_vetor(x_novo)
 
-        self.logs.append(Log(n, R, x_novo))
-        self.x = x_novo
+        for n in range(1, o + 1):
+            x = self.x
+            x_novo = [0]*len(x)
+            for i in range(len(x)):
+                soma_new = 0
+                soma_old = 0
+                for j in range(i):
+                    soma_new += self.A[i][j]*x_novo[j]
+                for j in range(i+1,len(x)):
+                    soma_old += self.A[i][j]*x[j]
+                x_novo[i] = (b[i] - soma_new - soma_old)/self.A[i][i]
+            residuo = modulo_vetor(sub_vetor(x_novo, x)) / modulo_vetor(x_novo)
 
-        if R <= t:
-            return
-        
-        return self.gauss_seidel(t, o, n) # Vai retornar None ou a mensagem de erro
+            self.logs.append(Log(n, residuo, x_novo))
+            self.x = x_novo
+
+            if residuo <= t:
+                return
+
+        return "Ultrapassou o número máximo de iterações"
