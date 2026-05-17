@@ -1,15 +1,16 @@
 import time
 from math import log10
 import matplotlib.pyplot as plt
+import numpy as np
 
 from Dependencias.results import Results
-from Dependencias.utilidades import erro_solucao, check_matriz_diagonal_dominante
+from Dependencias.utilidades import erro_solucao, check_matriz_diagonal_dominante, erro_vetor_solucao, numero_condicionamento
 from sistema_linear import SistemaLinear
 
 class TestesUmaMatriz:
     'Objetivo: executar todos os métodos em uma única matriz A e um único vetor B, e escrever os resultados em arquivos'
 
-    def __init__(self, A: list[list], b: list, t: float, o: int, x_inicial: list, caminho_saida: str):
+    def __init__(self, A: list[list], b: list, t: float, o: int, x_inicial: list, caminho_saida: str, x_calculado: list):
         self.A = A
         self.b = b
 
@@ -18,6 +19,7 @@ class TestesUmaMatriz:
         self.x_inicial = x_inicial
 
         self.caminho_saida = caminho_saida
+        self.x_calculado = x_calculado
 
         # Cada elemento: {'metodo', 'erro', 'tempo', 'iteracoes' (None se direto), 'mensagem' (None se ok)}
         self.resultados: list[dict] = []
@@ -35,6 +37,9 @@ class TestesUmaMatriz:
         s = self.sistema()
         r.write(f'Matriz A ({s.tamanho()} x {s.tamanho()}):')
         r.write(self.sistema())
+        cond = numero_condicionamento(self.A)
+        r.skipline()
+        r.write(f"κ(A) = {cond:.4e}")
 
         r.skipline()
         r.write('Vetor b:')
@@ -64,9 +69,15 @@ class TestesUmaMatriz:
         r.write(x)
 
         r.skipline()
-        erro = erro_solucao(self.A, x, self.b)
-        r.write(f'Erro da solução (|Ax - b|): {erro}')
+        r.write('X_aleatório_inicial:')
+        r.write(self.x_calculado)
 
+        r.skipline()
+        erro = erro_solucao(self.A, x, self.b)
+        erro_x = erro_vetor_solucao(x,self.x_calculado)
+        r.write(f'Erro da solução (|Ax - b|): {erro}')
+        r.write(f'Erro no vetor x: {erro_x}')
+        r.skipline()
         r.write(f'Tempo de execução: {final - inicio}')
 
         r.generate_file(caminho_saida)
@@ -105,8 +116,15 @@ class TestesUmaMatriz:
         r.write(x)
 
         r.skipline()
+        r.write('X_aleatório_inicial:')
+        r.write(self.x_calculado)
+
+        r.skipline()
         erro = erro_solucao(self.A, x, self.b)
+        erro_x = erro_vetor_solucao(x,self.x_calculado)
         r.write(f'Erro da solução (|Ax - b|): {erro}')
+        r.write(f'Erro no vetor x:{erro_x}')
+        r.skipline()
         r.write(f'Tempo de execução: {final - inicio}')
 
         r.generate_file(caminho_saida)

@@ -1,3 +1,6 @@
+import math
+import numpy as np
+
 def soma_vetor(a: list, b: list):
     'Retorna a + b. Ambos devem ter o mesmo tamanho.'
     res = [0]*len(a)
@@ -18,7 +21,7 @@ def modulo_vetor(a: list):
     soma = 0
     for i in range(len(a)):
         soma += (a[i])**(2)
-    mod = soma**(1/2)
+    mod = math.sqrt(soma)
     return mod
 
 def prod_vetor_escalar(a: list, k):
@@ -36,9 +39,9 @@ def coluna(A: list[list], j: int):
 def prod_matriz_vetor(A: list[list], y: list):
     'Retorna o produto entre A e o vetor y.'
     res = [0]*len(A)
-    for i in range(len(y)):
-        prod = prod_vetor_escalar(coluna(A, i), y[i])
-        res = soma_vetor(res, prod)
+    for i in range(len(A)):
+        for j in range(len(y)):
+            res[i] += A[i][j]*y[j]
 
     return res
 
@@ -115,3 +118,11 @@ def ler_matriz_market(caminho: str) -> list[list[float]]:
         entradas_lidas += 1
 
     return A
+
+def erro_vetor_solucao(x_aleatorio_inicial: list, x_calculado: list):
+    dif = sub_vetor(x_aleatorio_inicial, x_calculado)
+    return modulo_vetor(dif)
+
+def numero_condicionamento(A:list[list]):
+    cond = np.linalg.cond(A)
+    return cond
