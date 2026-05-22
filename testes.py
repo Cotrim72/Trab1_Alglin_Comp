@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from Dependencias.results import Results
-from Dependencias.utilidades import erro_solucao, check_matriz_diagonal_dominante, erro_vetor_solucao, numero_condicionamento
+from Dependencias.utilidades import erro_solucao, check_matriz_diagonal_dominante, erro_vetor_solucao, numero_condicionamento, erro_solução_b
 from sistema_linear import SistemaLinear
 
 class TestesUmaMatriz:
@@ -75,7 +75,9 @@ class TestesUmaMatriz:
         r.skipline()
         erro = erro_solucao(self.A, x, self.b)
         erro_x = erro_vetor_solucao(x,self.x_calculado)
+        erro_b = erro_solução_b(self.A, x, self.b)
         r.write(f'Erro da solução (|Ax - b|): {erro}')
+        r.write(f'Erro (|Ax - b|)/|b| {erro_b}')
         r.write(f'Erro no vetor x: {erro_x}')
         r.skipline()
         r.write(f'Tempo de execução: {final - inicio}')
@@ -122,8 +124,10 @@ class TestesUmaMatriz:
         r.skipline()
         erro = erro_solucao(self.A, x, self.b)
         erro_x = erro_vetor_solucao(x,self.x_calculado)
+        erro_b = erro_solução_b(self.A, x, self.b)
         r.write(f'Erro da solução (|Ax - b|): {erro}')
-        r.write(f'Erro no vetor x:{erro_x}')
+        r.write(f'Erro (|Ax - b|)/|b| {erro_b}')
+        r.write(f'Erro no vetor x: {erro_x}')
         r.skipline()
         r.write(f'Tempo de execução: {final - inicio}')
 

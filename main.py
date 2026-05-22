@@ -8,12 +8,12 @@ t = 10**(-8)
 o = 2000
 
 #matrizes = [
-#    ('bcsstk01', './Matrizes de Teste/bcsstk01.mtx'),
-#    ('bcsstk03', './Matrizes de Teste/bcsstk03.mtx'),
-#    ('bcsstk04', './Matrizes de Teste/bcsstk04.mtx'),
-#    ('494_bus',  './Matrizes de Teste/494_bus.mtx'),
-#    ('m1',       './Matrizes de Teste/m1.txt'),
-#    ('1138_bus', './Matrizes de Teste/1138_bus.mtx'),
+    #('bcsstk01', './Matrizes de Teste/bcsstk01.mtx'),
+    #('bcsstk03', './Matrizes de Teste/bcsstk03.mtx'),
+    #('bcsstk04', './Matrizes de Teste/bcsstk04.mtx'),
+    #('494_bus',  './Matrizes de Teste/494_bus.mtx'),
+    #('m1',       './Matrizes de Teste/m1.txt'),
+    #('1138_bus', './Matrizes de Teste/1138_bus.mtx'),
 #]
 
 matrizes = [

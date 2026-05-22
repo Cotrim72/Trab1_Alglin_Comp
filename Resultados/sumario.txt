@@ -4,77 +4,77 @@
 
 | Método                     | Erro \|Ax-b\|   | Tempo (s)  | Notas                |
 |----------------------------|-----------------|------------|----------------------|
-| eliminacao_gaussiana       | 0.000e+00       | 0.0105     |                      |
-| fatoracao_lu               | 0.000e+00       | 0.0102     |                      |
-| cholesky                   | 5.901e-17       | 0.0061     |                      |
-| jacobi                     | 0.000e+00       | 0.0007     | 2 iter               |
-| gauss_seidel               | 0.000e+00       | 0.0015     | 2 iter               |
-| eliminacao_gaussiana_numpy | 0.000e+00       | 0.0004     |                      |
-| fatoracao_lu_scipy         | 0.000e+00       | 0.0008     |                      |
-| cholesky_scipy             | 7.473e-17       | 0.0222     |                      |
+| eliminacao_gaussiana       | 0.000e+00       | 0.0184     |                      |
+| fatoracao_lu               | 0.000e+00       | 0.0090     |                      |
+| cholesky                   | 6.231e-17       | 0.0059     |                      |
+| jacobi                     | 0.000e+00       | 0.0012     | 2 iter               |
+| gauss_seidel               | 0.000e+00       | 0.0010     | 2 iter               |
+| eliminacao_gaussiana_numpy | 0.000e+00       | 0.0107     |                      |
+| fatoracao_lu_scipy         | 0.000e+00       | 0.0121     |                      |
+| cholesky_scipy             | 6.219e-17       | 0.0228     |                      |
 
 ## gr_30_30 (900 x 900)
 
 | Método                     | Erro \|Ax-b\|   | Tempo (s)  | Notas                |
 |----------------------------|-----------------|------------|----------------------|
-| eliminacao_gaussiana       | 3.493e-14       | 23.6259    |                      |
-| fatoracao_lu               | 3.300e-14       | 20.9783    |                      |
-| cholesky                   | 2.430e-14       | 13.9176    |                      |
-| jacobi                     | 1.347e-06       | 110.6395   | 1723 iter            |
-| gauss_seidel               | 6.736e-07       | 94.1807    | 908 iter             |
-| eliminacao_gaussiana_numpy | 3.242e-14       | 0.0619     |                      |
-| fatoracao_lu_scipy         | 3.282e-14       | 0.3512     |                      |
-| cholesky_scipy             | 2.407e-14       | 0.1194     |                      |
+| eliminacao_gaussiana       | 3.479e-14       | 23.5903    |                      |
+| fatoracao_lu               | 3.168e-14       | 29.4132    |                      |
+| cholesky                   | 2.314e-14       | 14.5014    |                      |
+| jacobi                     | 1.339e-06       | 128.8263   | 1723 iter            |
+| gauss_seidel               | 6.703e-07       | 49.0373    | 908 iter             |
+| eliminacao_gaussiana_numpy | 3.169e-14       | 0.0843     |                      |
+| fatoracao_lu_scipy         | 3.311e-14       | 0.7493     |                      |
+| cholesky_scipy             | 2.588e-14       | 0.0717     |                      |
 
 ## bcsstm22 (138 x 138)
 
 | Método                     | Erro \|Ax-b\|   | Tempo (s)  | Notas                |
 |----------------------------|-----------------|------------|----------------------|
-| eliminacao_gaussiana       | 0.000e+00       | 0.0987     |                      |
-| fatoracao_lu               | 0.000e+00       | 0.0744     |                      |
-| cholesky                   | 2.533e-18       | 0.0632     |                      |
-| jacobi                     | 0.000e+00       | 0.0045     | 2 iter               |
-| gauss_seidel               | 0.000e+00       | 0.0024     | 2 iter               |
-| eliminacao_gaussiana_numpy | 0.000e+00       | 0.0019     |                      |
-| fatoracao_lu_scipy         | 0.000e+00       | 0.0015     |                      |
-| cholesky_scipy             | 4.437e-18       | 0.0019     |                      |
+| eliminacao_gaussiana       | 0.000e+00       | 0.1054     |                      |
+| fatoracao_lu               | 0.000e+00       | 0.0977     |                      |
+| cholesky                   | 2.342e-18       | 0.0935     |                      |
+| jacobi                     | 0.000e+00       | 0.0056     | 2 iter               |
+| gauss_seidel               | 0.000e+00       | 0.0031     | 2 iter               |
+| eliminacao_gaussiana_numpy | 0.000e+00       | 0.0013     |                      |
+| fatoracao_lu_scipy         | 0.000e+00       | 0.0023     |                      |
+| cholesky_scipy             | 4.071e-18       | 0.0020     |                      |
 
 ## bfw398b (398 x 398)
 
 | Método                     | Erro \|Ax-b\|   | Tempo (s)  | Notas                |
 |----------------------------|-----------------|------------|----------------------|
-| eliminacao_gaussiana       | 1.214e-19       | 2.1656     |                      |
-| fatoracao_lu               | 8.612e-20       | 1.8818     |                      |
-| cholesky                   | 1.967e-04       | 0.0084     | Matriz não é simétrica positiva definida |
-| jacobi                     | 2.566e+39       | 25.6459    | 2000 iter; Ultrapassou o número máximo de iterações |
-| gauss_seidel               | 2.603e-13       | 0.2110     | 19 iter              |
-| eliminacao_gaussiana_numpy | 7.807e-20       | 0.0099     |                      |
-| fatoracao_lu_scipy         | 8.236e-20       | 0.1816     |                      |
-| cholesky_scipy             | 1.967e-04       | 0.0083     | Matriz não é simétrica positiva definida |
+| eliminacao_gaussiana       | 1.454e-19       | 2.0109     |                      |
+| fatoracao_lu               | 9.031e-20       | 2.3934     |                      |
+| cholesky                   | 1.959e-04       | 0.0130     | Matriz não é simétrica positiva definida |
+| jacobi                     | 2.620e+39       | 35.7771    | 2000 iter; Ultrapassou o número máximo de iterações |
+| gauss_seidel               | 1.901e-13       | 0.3012     | 19 iter              |
+| eliminacao_gaussiana_numpy | 9.153e-20       | 0.0173     |                      |
+| fatoracao_lu_scipy         | 8.867e-20       | 0.1247     |                      |
+| cholesky_scipy             | 1.959e-04       | 0.0134     | Matriz não é simétrica positiva definida |
 
 ## bfw62b (62 x 62)
 
 | Método                     | Erro \|Ax-b\|   | Tempo (s)  | Notas                |
 |----------------------------|-----------------|------------|----------------------|
-| eliminacao_gaussiana       | 9.333e-20       | 0.0080     |                      |
-| fatoracao_lu               | 6.984e-20       | 0.0069     |                      |
-| cholesky                   | 4.589e-04       | 0.0002     | Matriz não é simétrica positiva definida |
-| jacobi                     | 5.572e+03       | 0.6610     | 2000 iter; Ultrapassou o número máximo de iterações |
-| gauss_seidel               | 3.699e-13       | 0.0051     | 18 iter              |
-| eliminacao_gaussiana_numpy | 7.365e-20       | 0.0005     |                      |
-| fatoracao_lu_scipy         | 7.365e-20       | 0.0006     |                      |
-| cholesky_scipy             | 4.589e-04       | 0.0006     | Matriz não é simétrica positiva definida |
+| eliminacao_gaussiana       | 1.127e-19       | 0.0122     |                      |
+| fatoracao_lu               | 5.516e-20       | 0.0126     |                      |
+| cholesky                   | 4.703e-04       | 0.0004     | Matriz não é simétrica positiva definida |
+| jacobi                     | 5.482e+03       | 1.0110     | 2000 iter; Ultrapassou o número máximo de iterações |
+| gauss_seidel               | 3.313e-13       | 0.0096     | 19 iter              |
+| eliminacao_gaussiana_numpy | 1.089e-19       | 0.0005     |                      |
+| fatoracao_lu_scipy         | 1.089e-19       | 0.0009     |                      |
+| cholesky_scipy             | 4.703e-04       | 0.0007     | Matriz não é simétrica positiva definida |
 
 ## dwb512 (512 x 512)
 
 | Método                     | Erro \|Ax-b\|   | Tempo (s)  | Notas                |
 |----------------------------|-----------------|------------|----------------------|
-| eliminacao_gaussiana       | 2.199e-15       | 4.5021     |                      |
-| fatoracao_lu               | 1.414e-15       | 4.0945     |                      |
-| cholesky                   | 1.059e+01       | 0.0004     | Matriz não é simétrica positiva definida |
-| jacobi                     | 1.330e-08       | 0.3599     | 15 iter              |
-| gauss_seidel               | 7.799e-10       | 0.1995     | 10 iter              |
-| eliminacao_gaussiana_numpy | 2.446e-15       | 0.0181     |                      |
-| fatoracao_lu_scipy         | 2.489e-15       | 0.1326     |                      |
-| cholesky_scipy             | 1.059e+01       | 0.0154     | Matriz não é simétrica positiva definida |
+| eliminacao_gaussiana       | 2.238e-15       | 6.6394     |                      |
+| fatoracao_lu               | 1.331e-15       | 5.8945     |                      |
+| cholesky                   | 1.063e+01       | 0.0003     | Matriz não é simétrica positiva definida |
+| jacobi                     | 5.078e-09       | 0.5425     | 16 iter              |
+| gauss_seidel               | 4.492e-09       | 0.2509     | 9 iter               |
+| eliminacao_gaussiana_numpy | 2.429e-15       | 0.0328     |                      |
+| fatoracao_lu_scipy         | 2.457e-15       | 0.1652     |                      |
+| cholesky_scipy             | 1.063e+01       | 0.0186     | Matriz não é simétrica positiva definida |
 

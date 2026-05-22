@@ -16,13 +16,13 @@ def sub_vetor(a: list, b: list):
     return res
 
 def modulo_vetor(a: list):
-    'Retorna a norma euclidiana do vetor.'
-    # Foi utilizado norma euclidiana
-    soma = 0
+    soma = 0.0
     for i in range(len(a)):
-        soma += (a[i])**(2)
-    mod = math.sqrt(soma)
-    return mod
+        val = a[i]
+        if math.isinf(val) or math.isnan(val) or abs(val) > 1e154:
+            return float('inf') 
+        soma += val ** 2
+    return soma ** 0.5
 
 def prod_vetor_escalar(a: list, k):
     'Retorna o produto entre o vetor a e o escalar k.'
@@ -51,6 +51,9 @@ def erro_solucao(A: list[list], x: list, b: list):
     erro = sub_vetor(b, Ax)
     
     return modulo_vetor(erro)
+def erro_solução_b(A: list[list], x: list, b: list):
+    erro = erro_solucao(A,x,b)
+    return erro/modulo_vetor(b)   
 
 def gera_matriz_diagonal_dominante(A:list[list]):
     'A é uma matriz quadrada. Altera A e depois a retorna, tornando-a diagonal dominante.'
