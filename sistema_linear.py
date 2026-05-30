@@ -223,3 +223,39 @@ class SistemaLinear:
                 return
 
         return "Ultrapassou o número máximo de iterações"
+    
+    def gradientes_conjugados(self, tol: float, max_iter:int):           
+        
+        r = self.b - np.dot(self.A, self.x)
+    
+        if np.linalg.norm(r) < tol:
+            return 
+        
+        p = r.copy()
+    
+        rs_old = np.dot(r, r)
+    
+        for i in range(max_iter):
+            Ap = np.dot(self.A, p)
+        
+            alpha = rs_old / np.dot(p, Ap)
+        
+            self.x = self.x + alpha * p
+        
+            r = r - alpha * Ap
+
+            self.logs.append(Log(i+1, np.sqrt(np.dot(r, r)), self.x))
+
+            if np.sqrt(np.dot(r, r)) < tol:
+                return 
+            
+
+            rs_new = np.dot(r, r)
+        
+            beta = rs_new / rs_old
+        
+            p = r + beta * p
+        
+            rs_old = rs_new
+        
+        return "Ultrapassou o número máximo de iterações"

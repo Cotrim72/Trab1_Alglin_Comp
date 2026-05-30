@@ -49,8 +49,8 @@ def erro_solucao(A: list[list], x: list, b: list):
     'Retorna uma métrica para o erro de x enquanto solução do sistema A x = b. Exatamente, retorna o módulo de b - A x; quanto mais próximo de 0, melhor.'
     Ax = prod_matriz_vetor(A, x)
     erro = sub_vetor(b, Ax)
-    
     return modulo_vetor(erro)
+
 def erro_solução_b(A: list[list], x: list, b: list):
     erro = erro_solucao(A,x,b)
     return erro/modulo_vetor(b)   
@@ -129,3 +129,19 @@ def erro_vetor_solucao(x_aleatorio_inicial: list, x_calculado: list):
 def numero_condicionamento(A:list[list]):
     cond = np.linalg.cond(A)
     return cond
+
+def gerar_matriz_exemplo(tau:float):
+
+    A = np.random.uniform(-1, 1, (500, 500))
+    
+    A = (A + A.T) / 2
+    
+    np.fill_diagonal(A, 1.0)
+    
+    for i in range(500):
+        for j in range(500):
+            if i != j: 
+                if abs(A[i, j]) > tau:
+                    A[i, j] = 0.0
+                    
+    return A
