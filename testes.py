@@ -86,7 +86,7 @@ class TestesUmaMatriz:
 
         self.resultados.append({
             'metodo': metodo,
-            'erro': erro,
+            'erro': erro_b,
             'tempo': final - inicio,
             'iteracoes': None,
             'mensagem': res,
@@ -135,7 +135,7 @@ class TestesUmaMatriz:
 
         self.resultados.append({
             'metodo': metodo,
-            'erro': erro,
+            'erro': erro_b,
             'tempo': final - inicio,
             'iteracoes': len(logs),
             'mensagem': res,
@@ -160,14 +160,14 @@ class TestesUmaMatriz:
 
         self.escrever_configuracoes()
 
-        self.teste_metodo_direto('eliminacao_gaussiana', f'{pasta}/Resultados/eliminacao_gaussiana.txt')
-        self.teste_metodo_direto('fatoracao_lu', f'{pasta}/Resultados/fatoracao_lu.txt')
-        self.teste_metodo_direto('cholesky', f'{pasta}/Resultados/cholesky.txt')
+        #self.teste_metodo_direto('eliminacao_gaussiana', f'{pasta}/Resultados/eliminacao_gaussiana.txt')
+        #self.teste_metodo_direto('fatoracao_lu', f'{pasta}/Resultados/fatoracao_lu.txt')
+        #self.teste_metodo_direto('cholesky', f'{pasta}/Resultados/cholesky.txt')
 
-        self.teste_metodo_iterativo('jacobi', f'{pasta}/Resultados/jacobi.txt')
-        self.teste_metodo_iterativo('gauss_seidel', f'{pasta}/Resultados/gauss_seidel.txt')
+        #self.teste_metodo_iterativo('jacobi', f'{pasta}/Resultados/jacobi.txt')
+        #self.teste_metodo_iterativo('gauss_seidel', f'{pasta}/Resultados/gauss_seidel.txt')
         self.teste_metodo_iterativo('gradientes_conjugados', f'{pasta}/Resultados/gradientes_conjugados.txt')
 
-        self.teste_metodo_direto('eliminacao_gaussiana_numpy', f'{pasta}/Bibliotecas/eliminacao_gaussiana.txt')
-        self.teste_metodo_direto('fatoracao_lu_scipy', f'{pasta}/Bibliotecas/fatoracao_lu.txt')
-        self.teste_metodo_direto('cholesky_scipy', f'{pasta}/Bibliotecas/cholesky.txt')
+        #self.teste_metodo_direto('eliminacao_gaussiana_numpy', f'{pasta}/Bibliotecas/eliminacao_gaussiana.txt')
+        #self.teste_metodo_direto('fatoracao_lu_scipy', f'{pasta}/Bibliotecas/fatoracao_lu.txt')
+        #self.teste_metodo_direto('cholesky_scipy', f'{pasta}/Bibliotecas/cholesky.txt')

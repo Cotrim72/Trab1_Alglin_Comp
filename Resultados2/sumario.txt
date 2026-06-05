@@ -1,0 +1,56 @@
+# Sumário comparativo dos solvers
+
+## Matriz tau = 0.01 (500 x 500)
+
+| Método                     | Erro (|Ax - b|)/|b| | Tempo (s)  | Notas                |
+|----------------------------|---------------------|------------|----------------------|
+| cholesky                   | 1.534e-16       | 1.6827     |                      |
+| jacobi                     | 1.959e-11       | 0.1102     | 7 iter               |
+| gauss_seidel               | 6.499e-11       | 0.0728     | 5 iter               |
+| gradientes_conjugados      | 2.705e-09       | 0.0262     | 5 iter               |
+
+## Matriz tau = 0.05 (500 x 500)
+
+| Método                     | Erro (|Ax - b|)/|b| | Tempo (s)  | Notas                |
+|----------------------------|---------------------|------------|----------------------|
+| cholesky                   | 2.828e-16       | 1.8660     |                      |
+| jacobi                     | 2.360e-09       | 0.3770     | 20 iter              |
+| gauss_seidel               | 3.098e-10       | 0.1554     | 12 iter              |
+| gradientes_conjugados      | 9.154e-09       | 0.0158     | 12 iter              |
+
+## Matriz tau = 0.1 (500 x 500)
+
+| Método                     | Erro (|Ax - b|)/|b| | Tempo (s)  | Notas                |
+|----------------------------|---------------------|------------|----------------------|
+| cholesky                   | 9.702e-01       | 1.5679     | Matriz não é simétrica positiva definida |
+| jacobi                     | 2.859e+94       | 31.0166    | 2000 iter; Ultrapassou o número máximo de iterações |
+| gauss_seidel               | 3.960e+143      | 24.5118    | 2000 iter; Ultrapassou o número máximo de iterações |
+| gradientes_conjugados      | 8.702e-09       | 0.0221     | 156 iter             |
+
+## Matriz tau = 0.2 (500 x 500)
+
+| Método                     | Erro (|Ax - b|)/|b| | Tempo (s)  | Notas                |
+|----------------------------|---------------------|------------|----------------------|
+| cholesky                   | 1.002e+00       | 0.0856     | Matriz não é simétrica positiva definida |
+| jacobi                     | inf             | 30.7399    | 2000 iter; Ultrapassou o número máximo de iterações |
+| gauss_seidel               | inf             | 26.9247    | 2000 iter; Ultrapassou o número máximo de iterações |
+| gradientes_conjugados      | 2.212e-03       | 0.2145     | 2000 iter; Ultrapassou o número máximo de iterações |
+
+## Matriz tau = 0.5 (500 x 500)
+
+| Método                     | Erro (|Ax - b|)/|b| | Tempo (s)  | Notas                |
+|----------------------------|---------------------|------------|----------------------|
+| cholesky                   | 1.002e+00       | 0.1013     | Matriz não é simétrica positiva definida |
+| jacobi                     | inf             | 37.9463    | 2000 iter; Ultrapassou o número máximo de iterações |
+| gauss_seidel               | inf             | 31.5419    | 2000 iter; Ultrapassou o número máximo de iterações |
+| gradientes_conjugados      | 2.212e-03       | 0.1909     | 2000 iter; Ultrapassou o número máximo de iterações |
+
+## Matriz tau = 1 (500 x 500)
+
+| Método                     | Erro (|Ax - b|)/|b| | Tempo (s)  | Notas                |
+|----------------------------|---------------------|------------|----------------------|
+| cholesky                   | 1.030e+00       | 0.0134     | Matriz não é simétrica positiva definida |
+| jacobi                     | inf             | 37.4273    | 2000 iter; Ultrapassou o número máximo de iterações |
+| gauss_seidel               | inf             | 162.5258   | 2000 iter; Ultrapassou o número máximo de iterações |
+| gradientes_conjugados      | 9.547e-09       | 0.2070     | 1231 iter            |
+

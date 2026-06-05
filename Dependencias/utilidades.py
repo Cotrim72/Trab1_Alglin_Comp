@@ -130,18 +130,17 @@ def numero_condicionamento(A:list[list]):
     cond = np.linalg.cond(A)
     return cond
 
-def gerar_matriz_exemplo(tau:float):
+def gerar_matriz_exemplo(n:int):
+    A = np.random.uniform(-1, 1, (n, n)) 
+    A = (A + A.T) / 2    
+    np.fill_diagonal(A, 1.0)                    
+    return A.tolist()   
 
-    A = np.random.uniform(-1, 1, (500, 500))
-    
-    A = (A + A.T) / 2
-    
-    np.fill_diagonal(A, 1.0)
-    
-    for i in range(500):
-        for j in range(500):
+def aplicar_tau(A:list[list],tau:float):
+    A_copia = [linha[:] for linha in A]
+    for i in range(len(A_copia)):
+        for j in range(len(A_copia[0])):
             if i != j: 
-                if abs(A[i, j]) > tau:
-                    A[i, j] = 0.0
-                    
-    return A
+                if abs(A_copia[i][j]) > tau:
+                    A_copia[i][j] = 0.0
+    return A_copia

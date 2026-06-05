@@ -2,7 +2,7 @@ import numpy as np
 from scipy.linalg import lu_factor, lu_solve, cho_factor, cho_solve
 from scipy.sparse.linalg import gmres
 
-from Dependencias.utilidades import sub_vetor, modulo_vetor, soma_vetor, prod_vetor_escalar
+from Dependencias.utilidades import sub_vetor, modulo_vetor, soma_vetor, prod_vetor_escalar, prod_matriz_vetor
 from Dependencias.log import Log
 
 class SistemaLinear:
@@ -224,38 +224,45 @@ class SistemaLinear:
 
         return "Ultrapassou o número máximo de iterações"
     
-    def gradientes_conjugados(self, tol: float, max_iter:int):           
-        
-        r = self.b - np.dot(self.A, self.x)
+    def gradientes_conjugados(self, tol: float, max_iter: int):       
+        """ Implementação do Método dos Gradientes Conjugados."""
+        A_np = np.array(self.A)
+        b_np = np.array(self.b)
+        x = np.array(self.x, dtype=float)
     
-        if np.linalg.norm(r) < tol:
-            return 
-        
-        p = r.copy()
+        r = b_np - np.dot(A_np, x)
     
-        rs_old = np.dot(r, r)
+        v = r.copy()
     
-        for i in range(max_iter):
-            Ap = np.dot(self.A, p)
-        
-            alpha = rs_old / np.dot(p, Ap)
-        
-            self.x = self.x + alpha * p
-        
-            r = r - alpha * Ap
+        k = 0
 
-            self.logs.append(Log(i+1, np.sqrt(np.dot(r, r)), self.x))
-
-            if np.sqrt(np.dot(r, r)) < tol:
-                return 
+        while k < max_iter:
+            Av = np.dot(A_np, v)
+            v_A_v = np.dot(v.T, Av)
             
+            alpha = np.dot(v.T, r) / v_A_v
+        
+            x = x + alpha * v
+        
+            r_new = r - alpha * Av
+        
+            norm_r_new = np.linalg.norm(r_new)
+            norm_b = np.linalg.norm(b_np)
+            if norm_b == 0: norm_b = 1.0 
+            erro_relativo = norm_r_new / norm_b
+        
+            self.logs.append(Log(k + 1, erro_relativo, x.tolist()))
+        
+            if erro_relativo < tol:
+                self.x = x.tolist()
+                return
+            
+            beta = - np.dot(Av.T, r_new) / v_A_v
+        
+            v = r_new + beta * v
+        
+            r = r_new
+            k += 1
 
-            rs_new = np.dot(r, r)
-        
-            beta = rs_new / rs_old
-        
-            p = r + beta * p
-        
-            rs_old = rs_new
-        
+        self.x = x.tolist()
         return "Ultrapassou o número máximo de iterações"

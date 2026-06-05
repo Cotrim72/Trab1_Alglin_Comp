@@ -13,8 +13,8 @@ def gerar_sumario(todos_resultados, caminho_saida):
     for nome, n, resultados in todos_resultados:
         r.write(f'## {nome} ({n} x {n})')
         r.skipline()
-        r.write('| Método                     | Erro \\|Ax-b\\|   | Tempo (s)  | Notas                |')
-        r.write('|----------------------------|-----------------|------------|----------------------|')
+        r.write('| Método                     | Erro (|Ax - b|)/|b| | Tempo (s)  | Notas                |')
+        r.write('|----------------------------|---------------------|------------|----------------------|')
         for res in resultados:
             metodo = res['metodo']
             erro = f"{res['erro']:.3e}"
