@@ -1,0 +1,710 @@
+\documentclass[12pt, a4paper]{article}
+ 
+% ─── Pacotes ───────────────────────────────────────────────────────────────────
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[brazil]{babel}
+\usepackage{geometry}
+\usepackage{amsmath, amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{caption}
+\usepackage{float}
+\usepackage{parskip}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{microtype}
+\usepackage{enumitem}
+ 
+% ─── Geometria ─────────────────────────────────────────────────────────────────
+\geometry{
+  top    = 2.5cm,
+  bottom = 2.5cm,
+  left   = 3.0cm,
+  right  = 2.5cm
+}
+ 
+% ─── Cabeçalho / rodapé ────────────────────────────────────────────────────────
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\small COC473 — Álgebra Linear Computacional}
+\lhead{\small Trabalho 1 — Solução de Sistemas Lineares}
+\rfoot{\thepage}
+ 
+% ─── Hyperlinks ────────────────────────────────────────────────────────────────
+\hypersetup{
+  colorlinks = true,
+  linkcolor  = blue!70!black,
+  urlcolor   = blue!70!black,
+  citecolor  = blue!70!black
+}
+ 
+% ─── Listings (código Python) ──────────────────────────────────────────────────
+\lstset{
+  language     = Python,
+  basicstyle   = \ttfamily\footnotesize,
+  keywordstyle = \color{blue!80!black}\bfseries,
+  commentstyle = \color{gray}\itshape,
+  stringstyle  = \color{orange!80!black},
+  numbers      = left,
+  numberstyle  = \tiny\color{gray},
+  breaklines   = true,
+  frame        = single,
+  rulecolor    = \color{gray!40},
+  backgroundcolor = \color{gray!5},
+  captionpos   = b,
+  showstringspaces = false
+}
+ 
+% ─── Título ────────────────────────────────────────────────────────────────────
+\title{
+  \vspace{-1cm}
+  {\large ECI / Politécnica — UFRJ} \\[0.4em]
+  {\large COC473 — Álgebra Linear Computacional} \\[0.8em]
+  \rule{\linewidth}{0.5pt} \\[0.6em]
+  {\LARGE \textbf{Solução de Sistemas de Equações Lineares}} \\[0.4em]
+  {\large Trabalho 1} \\[0.2em]
+  \rule{\linewidth}{0.5pt}
+}
+ 
+\author{
+  Leonardo Peres Albertazzi Drummond \\
+  Marco Antonio Tronco Felix \\
+  Eduardo de Mendonça Freire \\
+  João Pedro Peçanha Cotrim \\
+  Carlos Augusto Bertão Rodrigues \\
+  Andre Pacífico
+}
+ 
+\date{1\textsuperscript{o} Semestre de 2026}
+ 
+% ══════════════════════════════════════════════════════════════════════════════
+\begin{document}
+% ══════════════════════════════════════════════════════════════════════════════
+ 
+\maketitle
+\thispagestyle{empty}
+ 
+\begin{abstract}
+Este relatório descreve a implementação, validação e análise de desempenho de cinco
+métodos para solução de sistemas lineares quadrados $Ax = b$: Eliminação Gaussiana,
+Fatoração LU, Decomposição de Cholesky, método de Jacobi e método de Gauss-Seidel.
+Os métodos foram aplicados a doze matrizes esparsas do repositório Matrix Market,
+provenientes de problemas de engenharia estrutural,  sistemas de potência e engenharia elétrica. Os resultados
+confirmam que (i) Cholesky requer aproximadamente metade do custo computacional de
+Gauss/LU, em acordo com a teoria; (ii) os métodos iterativos, especialmente o método de Jacobi, falham em algumas das
+matrizes por mal condicionamento e ausência de dominância diagonal; e (iii) as implementações em Python puro
+alcançam a mesma precisão numérica que as bibliotecas NumPy/SciPy, porém com velocidade até $632\times$ inferior à das bibliotecas.
+\end{abstract}
+ 
+\newpage
+\tableofcontents
+\newpage
+ 
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Introdução}
+% ══════════════════════════════════════════════════════════════════════════════
+ 
+Resolver sistemas lineares da forma
+\begin{equation}
+  Ax = b, \qquad A \in \mathbb{R}^{n \times n},
+  \label{eq:sistema}
+\end{equation}
+é uma tarefa central em praticamente todas as áreas da engenharia e das ciências
+computacionais. Em problemas reais — engenharia estrutural, redes elétricas, simulação
+de equações diferenciais parciais — a dimensão $n$ pode variar de centenas a milhões,
+tornando a escolha do método de resolução crítica tanto em termos de custo quanto de
+precisão.
+ 
+Este trabalho implementa e compara dois grandes paradigmas de solução:
+ 
+\begin{description}[leftmargin=2cm, style=nextline]
+  \item[Métodos diretos] Fatoram $A$ em uma forma triangular ou produto de matrizes.
+    O resultado é obtido em um único passo (fatoração + substituição) e é exato a menos
+    de erros de arredondamento em ponto flutuante.
+  \item[Métodos iterativos] Partem de uma estimativa inicial $x^{(0)}$ e refinam
+    progressivamente a solução até satisfazer um critério de parada baseado em
+    tolerância ou número máximo de iterações.
+\end{description}
+ 
+O objetivo é estudar empiricamente a eficiência, a precisão e as condições de
+convergência de cada abordagem sobre matrizes de referência com características
+distintas.
+ 
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Descrição dos métodos}
+% ══════════════════════════════════════════════════════════════════════════════
+ 
+\subsection{Métodos diretos}
+ 
+\subsubsection{Eliminação Gaussiana}
+ 
+A Eliminação Gaussiana transforma $A$ em uma matriz triangular superior $U$ por meio
+de combinações lineares de linhas. Em seguida, o sistema $Ux = b'$ é resolvido por
+retrosubstituição. O custo total é de aproximadamente $\frac{2n^3}{3}$ operações de
+ponto flutuante, sendo aplicável a qualquer matriz não-singular.
+ 
+\subsubsection{Fatoração LU}
+ 
+A Fatoração LU aplica a mesma ideia da Eliminação Gaussiana, mas guarda explicitamente
+a fatoração $A = LU$, onde $L$ é triangular inferior com diagonal unitária e $U$ é
+triangular superior. O custo de fatoração é idêntico ($\approx \frac{2n^3}{3}$), mas a
+vantagem é significativa quando se precisa resolver o sistema para múltiplos vetores
+$b$: após a fatoração, cada novo sistema custa apenas $\mathcal{O}(n^2)$, sem refatorar.
+ 
+\subsubsection{Decomposição de Cholesky}
+ 
+Para matrizes simétricas positivas definidas (SPD), a Decomposição de Cholesky
+fatoriza $A = LL^T$, onde $L$ é triangular inferior. As fórmulas de atualização são:
+\begin{align}
+  \ell_{ii} &= \sqrt{a_{ii} - \sum_{k < i} \ell_{ik}^2}, \label{eq:chol_diag} \\
+  \ell_{ji} &= \frac{a_{ji} - \sum_{k < i} \ell_{jk}\,\ell_{ik}}{\ell_{ii}},
+    \quad j > i. \label{eq:chol_off}
+\end{align}
+O custo é de $\approx \frac{n^3}{3}$ operações, exatamente a metade de Gauss/LU,
+tornando-o o método direto mais eficiente para matrizes SPD.
+ 
+\subsection{Métodos iterativos}
+ 
+\subsubsection{Método de Jacobi}
+ 
+O método de Jacobi atualiza todas as coordenadas em paralelo usando apenas os valores
+da iteração anterior:
+\begin{equation}
+  x_i^{(k+1)} = \frac{b_i - \sum_{j \neq i} a_{ij}\,x_j^{(k)}}{a_{ii}}.
+  \label{eq:jacobi}
+\end{equation}
+ 
+\subsubsection{Método de Gauss-Seidel}
+ 
+O método de Gauss-Seidel melhora o Jacobi ao reaproveitar, na mesma iteração, os
+componentes já atualizados:
+\begin{equation}
+  x_i^{(k+1)} = \frac{b_i
+    - \displaystyle\sum_{j < i} a_{ij}\,x_j^{(k+1)}
+    - \displaystyle\sum_{j > i} a_{ij}\,x_j^{(k)}}{a_{ii}}.
+  \label{eq:gs}
+\end{equation}
+Em geral, Gauss-Seidel converge em menos iterações do que Jacobi.
+ 
+\subsubsection{Critério de parada}
+ 
+Ambos os métodos iterativos utilizam o critério de parada relativo:
+\begin{equation}
+  R^{(k)} = \frac{\|x^{(k+1)} - x^{(k)}\|_2}{\|x^{(k+1)}\|_2} \leq t,
+  \label{eq:criterio}
+\end{equation}
+ 
+\subsection{Resumo comparativo}
+ 
+A Tabela~\ref{tab:metodos} resume as características de cada método.
+ 
+\begin{table}[H]
+  \centering
+  \caption{Comparação entre os métodos implementados.}
+  \label{tab:metodos}
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{lllll}
+    \toprule
+    \textbf{Método} & \textbf{Custo} & \textbf{Requisito em $A$}
+      & \textbf{Convergência} & \textbf{Quando usar} \\
+    \midrule
+    Gauss      & $2n^3/3$       & não-singular     & garantida    & qualquer caso \\
+    LU         & $2n^3/3$       & não-singular     & garantida    & múltiplos $b$ \\
+    Cholesky   & $n^3/3$        & SPD              & garantida    & $A$ SPD — $2\times$ mais rápido \\
+    Jacobi     & $n^2$/iter     & diag.\ dominante & condicional  & paralelização \\
+    Gauss-Seidel & $n^2$/iter   & diag.\ dominante & condicional  & memória limitada \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+ 
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Implementação}
+% ══════════════════════════════════════════════════════════════════════════════
+ 
+\subsection{Estrutura do projeto}
+ 
+O código foi organizado em módulos com responsabilidades bem definidas:
+ 
+\begin{verbatim}
+Trab1_Alglin_Comp/
+├── main.py              # loop sobre as 6 matrizes
+├── sistema_linear.py    # classe SistemaLinear (todos os métodos)
+├── testes.py            # orquestra: executa, mede, escreve
+└── Dependencias/
+    ├── utilidades.py    # vetores, ler_matriz_market, ...
+    ├── log.py           # Log(iteração, resíduo, x)
+    ├── results.py       # escreve .txt
+    └── sumario.py       # tabela comparativa em Markdown
+\end{verbatim}
+ 
+A classe \texttt{SistemaLinear} encapsula a matriz $A$, o vetor $b$ e a solução $x$.
+Cada método altera \texttt{self.x} e possui também uma versão com biblioteca para
+comparação (\texttt{np.linalg.solve}, \texttt{scipy.linalg.lu\_factor},
+\texttt{scipy.linalg.cho\_factor}).
+ 
+\subsection{Núcleo das implementações}
+ 
+\paragraph{Fatoração LU.}
+O fragmento abaixo ilustra o núcleo da fatoração em Python puro, sem uso de
+bibliotecas numéricas:
+ 
+\begin{lstlisting}[caption={Núcleo da Fatoração LU (Python puro).}]
+for i in range(n):
+    for j in range(i + 1, n):
+        mult = U[j][i] / U[i][i]
+        L[j][i] = mult
+        for k in range(i, n):
+            U[j][k] -= mult * U[i][k]
+\end{lstlisting}
+ 
+\paragraph{Decomposição de Cholesky.}
+ 
+\begin{lstlisting}[caption={Núcleo da Decomposição de Cholesky (Python puro).}]
+for i in range(n):
+    soma_diag = self.A[i][i] - sum(L[i][k]**2 for k in range(i))
+    if soma_diag <= 0:
+        return "Matriz não é simétrica positiva definida"
+    L[i][i] = soma_diag ** 0.5
+    for j in range(i + 1, n):
+        soma = self.A[j][i] - sum(L[j][k]*L[i][k] for k in range(i))
+        L[j][i] = soma / L[i][i]
+\end{lstlisting}
+ 
+Os métodos iterativos (Jacobi e Gauss-Seidel) seguem diretamente as
+equações~\eqref{eq:jacobi} e~\eqref{eq:gs}, sem uso de bibliotecas.
+ 
+\subsection{Verificação, logging, saída, Teste}
+ 
+\begin{itemize}
+  \item \textbf{Verificação de correção:} após obtenção de $x$, calcula-se
+    $\frac{\|b - Ax\|_2}{\|b\|_2}$ em todos os métodos.
+  \item \textbf{Log por iteração (iterativos):} em cada passo $k$, grava-se
+    $(k,\, R^{(k)},\, x^{(k)})$. Ao final, \texttt{matplotlib} gera o gráfico
+    $\log_{10}(R) \times k$ em \texttt{.png}.
+  \item \textbf{Saída em arquivo:} cada teste produz um \texttt{.txt} com $x$ final,
+    erro, tempo e log completo. Ao final do \texttt{main.py}, \texttt{gerar\_sumario()}
+    consolida tudo em Markdown.
+   \item \textbf{Teste:} Inicialmente é gerado um x    aleatório, calcula-se Ax e usa-se esse valor como b para a solução do sistema. Como métrica adicional para o erro, o valor de x encontrado pode ser comparado ao valor de x gerado antes.
+\end{itemize}
+ 
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Matrizes de teste}
+
+Foram utilizadas doze matrizes do repositório Matrix Market, seis mal-condicionadas e seis bem-condicionadas.
+
+\subsection{Matrizes Mal-Condicionadas}
+A Tabela~\ref{tab:matrizes} apresenta suas principais características.
+ 
+\begin{table}[H]
+  \centering
+  \caption{Matrizes utilizadas nos experimentos.}
+  \label{tab:matrizes}
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{llll}
+    \toprule
+    \textbf{Matriz} & \textbf{$n$} & \textbf{$\kappa(A)$} & \textbf{Tipo} \\
+    \midrule
+    \texttt{bcsstk01} & 48   & $8{,}8 \times 10^5$ & SPD \\
+    \texttt{bcsstk03} & 112  & $6{,}8 \times 10^6$ & SPD \\
+    \texttt{bcsstk04} & 132  & $2{,}3 \times 10^6$ & SPD \\
+    \texttt{494\_bus} & 494  & $2{,}4 \times 10^6$ & SPD \\
+    \texttt{nos6}     & 675  & $7{,}7 \times 10^6$ & SPD diag.\ dominante \\
+    \texttt{1138\_bus}& 1138 & $8{,}6 \times 10^6$ & SPD \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+ 
+Todas as matrizes são SPD (autovalores positivos) e mal-condicionadas, cobrindo dois
+domínios de aplicação e três ordens de grandeza em $n$.
+
+\subsection{Matrizes Bem-Condicionadas}
+
+A Tabela~\ref{tab:matrizes2} apresenta suas principais características.
+ 
+\begin{table}[H]
+  \centering
+  \caption{Matrizes utilizadas nos experimentos.}
+  \label{tab:matrizes2}
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{llll}
+    \toprule
+    \textbf{Matriz} & \textbf{$n$} & \textbf{$\kappa(A)$} & \textbf{Tipo} \\
+    \midrule
+    \texttt{bfw62b} & 62   & $1{,}7 \times 10^1$ & Real simétrica indefinida \\
+    \texttt{bcsstm02} & 66  & $8{,}8 \times 10^0$ & SPD diag.\ dominante \\
+    \texttt{bcsstm22} & 138  & $9{,}4 \times 10^2$ & SPD diag.\ dominante \\
+    \texttt{bfw398b} & 398  & $2{,}1 \times 10^1$ & Real simétrica indefinida \\
+    \texttt{dwb512}     & 512  & $3{,}7 \times 10^0$ & Real não simétrica diag.\ dominante \\
+    \texttt{gr\_30\_30}& 900 & $1{,}9 \times 10^2$ & SPD fracamente diag.\ dominante \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+ 
+Entre as matrizes selecionadas, temos quatro matrizes diagonais dominantes, sendo duas matrizes diagonais, e duas matrizes não diagonais dominantes. Apesar de serem bem condicionadas, nem todas são SPD, ou seja, o método de Cholesky não é aplicável para todas.
+
+\section{Resultados}
+
+\subsection{Matrizes Mal-Condicionadas}
+ 
+\subsubsection{Métodos diretos}
+ 
+A Tabela~\ref{tab:diretos} apresenta os tempos de execução para os três métodos diretos.
+O erro residual $\frac{\|b - Ax\|_2}{\|b\|_2}$ ficou na faixa de $10^{-16}$ a $10^{-15}$ em todos os
+casos — solução essencialmente exata para os fins práticos.
+ 
+\begin{table}[H]
+  \centering
+  \caption{Tempo de execução (segundos) dos métodos diretos.}
+  \label{tab:diretos}
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{lrrr}
+    \toprule
+    \textbf{Matriz} & \textbf{Gauss} & \textbf{LU} & \textbf{Cholesky} \\
+    \midrule
+    \texttt{bcsstk01}  & 0{,}003 & 0{,}003 & 0{,}003 \\
+    \texttt{bcsstk04}  & 0{,}059 & 0{,}057 & 0{,}040 \\
+    \texttt{494\_bus}  & 3{,}19  & 2{,}95  & 1{,}75  \\
+    \texttt{nos6}      & 8{,}18  & 7{,}60  & 4{,}47  \\
+    \texttt{1138\_bus} & 39{,}32 & 36{,}56 & 21{,}59 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+ 
+Cholesky levou aproximadamente 55\% do tempo de Gauss/LU na maior matriz, em acordo
+com a razão teórica $\frac{n^3/3}{2n^3/3} = \frac{1}{2}$.
+ 
+\subsubsection{Métodos iterativos}
+ 
+A Tabela~\ref{tab:iterativos} apresenta os resultados de Jacobi e Gauss-Seidel com
+$t = 10^{-8}$ e $o = 4000$ iterações máximas, cada um com seu respectivo erro
+$\frac{\|b - Ax\|_2}{\|b\|_2}$.
+ 
+\begin{table}[H]
+  \centering
+  \caption{Resultados dos métodos iterativos ($t = 10^{-8}$, $o_{\max} = 4000$).}
+  \label{tab:iterativos}
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{lll}
+    \toprule
+    \textbf{Matriz} & \textbf{Jacobi} & \textbf{Gauss-Seidel} \\
+    \midrule
+    \texttt{bcsstk01}  & 4000 iter — erro $INF$    & \textbf{3967 iter} — $R < t$ (erro $1{,}65 \times 10^{-11}$) \\
+    \texttt{bcsstk03}  & 4000 iter —  erro  $INF$ & 4000 iter — erro $3{,}10 \times 10^{-5}$ \\
+    \texttt{bcsstk04}  & 4000 iter — erro $INF$ & 4000 iter — erro $3{,}03 \times 10^{-3}$ \\
+    \texttt{494\_bus}  & 4000 iter — erro $0{,}44$            & 4000 iter — erro $3{,}42 \times 10^{-5}$ \\
+    \texttt{nos6}      & 4000 iter — erro $0{,}13$  & 4000 iter — erro $8{,}23 \times 10^{-7}$ \\
+    \texttt{1138\_bus} & 4000 iter — erro $0{,}21$                 & 4000 iter — erro $2{,}51 \times 10^{-5}$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+ 
+5 das matrizes utilizadas não são diagonais dominantes, ou seja, não há garantia de convergência para elas. Apesar disso, na matriz bcsstk01, o método de Gauss-Seidel acabou convergindo com 3967 iterações. Além disso, apesar da nos6 ser diagonal dominante, por ser mal condicionada, ela não convergiu dentro do limite da quantidade máxima de iterações do método de Jacobi.
+
+Além do mais, devido a má condicionalidade, o método de Jacobi apresentou um grande erro relativo para todas as matrizes. O método de Gauss-Seidel apresentou erro relativo menor.
+
+\subsubsection{Gráficos log(r) x iterações }
+- Matriz bcsstk01
+
+\includegraphics[width=0.9\linewidth]{jacobi_bcsstk01.png}
+
+O gráfico de Jacobi acabou explodindo, demonstrando que para matrizes não diagonais dominantes a convergência não é garantida.
+
+\includegraphics[width=0.9\linewidth]{gauss_seidel_bcsstk01.png}
+
+O gráfico de Gauss-Seidel demonstrou um comportamento decrescente e finalizou com 3967 operações apresentando um erro relativo $1{,}65 \times 10^{-11}$. 
+
+- Matriz bcsstk03
+
+\includegraphics[width=0.9\linewidth]{jacobi_bcsstk03.png}
+
+O gráfico de Jacobi acabou explodindo, demonstrando que para matrizes não diagonais dominantes a convergência não é garantida.
+
+\includegraphics[width=0.9\linewidth]{gauss_seidel_bcsstk03.png}
+
+O gráfico de Gauss-Seidel demonstrou um comportamento decrescente, no entanto, a partir de 1000 operações começou a ter um comportamento constante.
+
+- Matriz bcsstk04
+
+\includegraphics[width=0.9\linewidth]{jacobi_bcsstk04.png}
+
+O gráfico de Jacobi acabou explodindo, demonstrando que para matrizes não diagonais dominantes a convergência não é garantida.
+
+
+\includegraphics[width=0.9\linewidth]{gauss_seidel_bcsstk04.png}
+
+O gráfico de Gauss-Seidel demonstrou um comportamento decrescente, no entanto, não convergiu dentro do limite de operações máximas.
+
+- Matriz 494\_bus
+
+\includegraphics[width=0.9\linewidth]{jacobi_494.png}
+
+Esse gráfico de Jacobi demonstrou um comportamento descrescente, no entanto, não convergiu dentro do limite de operações máximas.
+
+\includegraphics[width=0.9\linewidth]{gauss_seidel_494.png}
+
+O gráfico de Gauss-Seidel demonstrou um comportamento decrescente, no entanto, não convergiu dentro do limite de operações máximas.
+
+- Matriz nos6
+
+\includegraphics[width=0.9\linewidth]{jacobi_m1.png}
+
+Esse gráfico de Jacobi demonstrou um comportamento descrescente até a milésima iteração, no entanto, entrou em um comportamento constante e não convergiu no limite máximo de iterações. Apesar da matriz ser diagonal dominante, os métodos não convergiram no limite máximo de iterações, o que demonstra como a má condicionalidade pode prejudicar a convergência dos métodos iterativos.
+
+\includegraphics[width=0.9\linewidth]{gauss_seidel_m1.png}
+
+Esse gráfico de Gauss-Seidel demonstrou um comportamento descrescente até a iteração 1500, no entanto, entrou em um comportamento constante e não convergiu no limite máximo de iterações. Apesar da matriz ser diagonal dominante, os métodos não convergiram no limite máximo de iterações, o que demonstra como a má condicionalidade pode prejudicar a convergência dos métodos iterativos.
+
+- Matriz 1138\_bus
+
+\includegraphics[width=0.9\linewidth]{jacobi_1138.png}
+
+O gráfico de Jacobi obteve comportamento descrescente, mas não convergiu no limite máximo de iterações.
+
+\includegraphics[width=0.9\linewidth]{gauss_seidel_1138.png}
+
+O gráfico de Gauss-Seidel obteve comportamento descrescente, mas não convergiu no limite máximo de iterações.
+
+
+\subsection{Matrizes Bem-Condicionadas}
+ 
+\subsubsection{Métodos diretos}
+ 
+A Tabela~\ref{tab:diretos} apresenta os tempos de execução para os três métodos diretos.
+O erro residual $\frac{\|b - Ax\|_2}{\|b\|_2}$ ficou na faixa de $10^{-16}$ a $10^{-15}$ em todos os
+casos (à exceção do método de Cholesky nas matrizes que não são SPD) — solução essencialmente exata para os fins práticos.
+ 
+\begin{table}[H]
+  \centering
+  \caption{Tempo de execução (segundos) dos métodos diretos.}
+  \label{tab:diretos}
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{lrrr}
+    \toprule
+    \textbf{Matriz} & \textbf{Gauss} & \textbf{LU} & \textbf{Cholesky} \\
+    \midrule
+    \texttt{bfw62b}  & 0{,}012 & 0{,}012 & - \\
+    \texttt{bcsstm02}  & 0{,}018 & 0{,}009 & 0{,}006 \\
+    \texttt{bcsstm22}  & 0{,}105  & 0{,}098  & 0{,}093  \\
+    \texttt{bfw398b}      & 2{,}01  & 2{,}39 & -  \\
+    \texttt{dwb512} & 6{,}64 & 5{,}89 & - \\
+    \texttt{gr\_30\_30} & 23{,}59 & 29{,}41 & 14{,}50 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+ 
+Cholesky levou aproximadamente 55\% do tempo de Gauss/LU na maior matriz, em acordo
+com a razão teórica $\frac{n^3/3}{2n^3/3} = \frac{1}{2}$.
+ 
+\subsubsection{Métodos iterativos}
+ 
+A Tabela~\ref{tab:iterativos} apresenta os resultados de Jacobi e Gauss-Seidel com
+$t = 10^{-8}$ e $o = 2000$ iterações máximas, cada um com seu respectivo erro
+$\frac{\|b - Ax\|_2}{\|b\|_2}$.
+ 
+\begin{table}[H]
+  \centering
+  \caption{Resultados dos métodos iterativos ($t = 10^{-8}$, $o_{\max} = 2000$).}
+  \label{tab:iterativos}
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{lll}
+    \toprule
+    \textbf{Matriz} & \textbf{Jacobi} & \textbf{Gauss-Seidel} \\
+    \midrule
+    \texttt{bfw62b}  & 2000 iter — erro $1{,}26 \times 10^{7}$    & \textbf{19 iter} — $R < t$ (erro $7{,}64 \times 10^{-10}$) \\
+    \texttt{bcsstm02}  & 2 iter — $R < t$ (erro $0$) & 2 iter — $R < t$ (erro $0$) \\
+    \texttt{bcsstm22}  & 2 iter — $R < t$ (erro $0$) & 2 iter — $R < t$ (erro $0$) \\
+    \texttt{bfw398b}  & 2000 iter — erro $1{,}28 \times 10^{43}$            & 19 iter — $R < t$ (erro $9{,}31 \times 10^{-10}$) \\
+    \texttt{dwb512}      & 16 iter — $R < t$ (erro $5{,}04 \times 10^{-10}$)  & 9 iter — $R < t$ (erro $4{,}46 \times 10^{-10}$) \\
+    \texttt{gr\_30\_30} & 1723 iter — $R < t$ (erro $1{,}78 \times 10^{-8}$)                & 908 iter — $R < t$ (erro $8{,}91 \times 10^{-9}$)\\
+    \bottomrule
+  \end{tabular}
+\end{table}
+ 
+Neste momento, analisando as matrizes bem condicionadas, denota-se que, à exceção do método de Jacobi na matriz bfw398b, o erro obtido foi menor para todas as matrizes.
+
+Além disso, devido a boa condicionalidade, o método de Gauss-Seidel convergiu em todas matrizes, mesmo nas matrizes não diagonais dominantes.
+
+O erro 0 obtido e as 2 iterações realizadas devem se às matrizes bcsstm02 e bcsstm22 serem matrizes diagonais.
+
+\subsubsection{Gráficos log(r) x iterações}
+
+- Matriz bfw62b
+
+\includegraphics[width=0.9\linewidth]{jacobi_bfw62b.png}
+
+O Gráfico de Jacobi divergiu, não obtendo a solução correta.
+
+\includegraphics[width=0.9\linewidth]{gauss_seidel_bfw62b.png}
+
+O Gráfico de Gauss-Seidel apresentou um comportamento de descrescimento, praticamente, linear e convergiu em 19 iterações.
+
+- Matriz bfw398b
+
+\includegraphics[width=0.9\linewidth]{jacobi_bfw398b.png}
+
+O Gráfico de Jacobi divergiu, não obtendo a solução correta.
+
+\includegraphics[width=0.9\linewidth]{gauss_seidel_bfw398b.png}
+
+O Gráfico de Gauss-Seidel apresentou um comportamento de descrescimento, praticamente, linear e convergiu em 19 iterações.
+
+- Matriz dwb512
+
+\includegraphics[width=0.9\linewidth]{jacobi_dwb512.png}
+
+O gráfico de Jacobi apresentou um comportamento de descrescimento, praticamente, linear e convergiu em 16 iterações.
+
+\includegraphics[width=0.9\linewidth]{gauss_seidel_dwb512.png}
+
+O Gráfico de Gauss-Seidel apresentou um comportamento, de descrescimento, praticamente, linear e convergiu em 9 iterações.
+
+- Matriz gr\_30\_30
+
+\includegraphics[width=0.9\linewidth]{jacobi_gr_30_30.png}
+
+O gráfico de Jacobi apresentou um comportamento, a partir de 250 iterações, de descrescimento, praticamente, linear e convergiu em 1723 iterações.
+
+\includegraphics[width=0.9\linewidth]{gauss_seidel_gr_30_30.png}
+
+O Gráfico de Gauss-Seidel apresentou um comportamento, a partir de 200 iterações, de descrescimento, praticamente, linear e convergiu em 908 iterações.
+
+As matrizes bcsstm02 e bcsstm22 não geraram gráficos, por terem terminado em duas iterações.
+
+O método de Gauss-Seidel convergiu em todas as matrizes bem-condicionada, mesmo as que não eram diagonais dominantes.
+
+Verifica que em matrizes bem-condicionadas, o gráfico de log(resíduo) × iteração tende a ser linear.
+
+\section{Comparação: implementação pura vs.\ bibliotecas}
+% ══════════════════════════════════════════════════════════════════════════════
+ 
+\subsection{Tempo de execução}
+ 
+A Tabela~\ref{tab:biblio_tempo} apresenta os tempos e ganhos para a maior matriz
+(\texttt{1138\_bus}, $n = 1138$).
+ 
+\begin{table}[H]
+  \centering
+  \caption{Tempo de execução e ganho de velocidade para \texttt{1138\_bus}.}
+  \label{tab:biblio_tempo}
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{lrr}
+    \toprule
+    \textbf{Implementação} & \textbf{Tempo (s)} & \textbf{Ganho} \\
+    \midrule
+    Eliminação Gaussiana (Python puro) & 39{,}3  & $1\times$   \\
+    \texttt{np.linalg.solve}           & 0{,}062 & $632\times$ \\
+    Fatoração LU (Python puro)         & 36{,}6  & $1\times$   \\
+    \texttt{scipy.linalg.lu\_solve}    & 0{,}479 & $76\times$  \\
+    Cholesky (Python puro)             & 21{,}6  & $1\times$   \\
+    \texttt{scipy.linalg.cho\_solve}   & 0{,}069 & $313\times$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+ 
+O ganho de velocidade provém de BLAS/LAPACK compilados em C/Fortran com instruções
+SIMD, em contraste com os laços Python interpretados.
+ 
+\subsection{Precisão numérica}
+ 
+\begin{table}[H]
+  \centering
+  \caption{Erro residual $\frac{\|b - Ax\|_2}{\|b\|_2}$ em \texttt{1138\_bus}.}
+  \label{tab:biblio_precisao}
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{lrr}
+    \toprule
+    \textbf{Método} & \textbf{Python puro} & \textbf{Biblioteca} \\
+    \midrule
+    Eliminação Gaussiana & $4{,}62 \times 10^{-16}$ & $2{,}66 \times 10^{-16}$ \\
+    Fatoração LU         & $5{,}50 \times 10^{-16}$ & $2{,}31 \times 10^{-16}$ \\
+    Cholesky             & $4{,}00 \times 10^{-16}$ & $2{,}61 \times 10^{-16}$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+ 
+A precisão é da mesma ordem ($10^{-16}$) entre a versão pura e as bibliotecas.
+A diferença é exclusivamente de eficiência computacional, não de algoritmo,
+confirmando a correção da implementação.
+ 
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Validação da teoria: razão Cholesky/Gauss}
+% ══════════════════════════════════════════════════════════════════════════════
+ 
+A teoria prevê:
+\begin{equation}
+  \frac{t_{\text{Cho}}}{t_{\text{Gauss}}} \;\longrightarrow\;
+  \frac{n^3/3}{2n^3/3} = \frac{1}{2}.
+  \label{eq:razao}
+\end{equation}
+ 
+A Tabela~\ref{tab:razao} mostra as razões medidas experimentalmente.
+ 
+\begin{table}[H]
+  \centering
+  \caption{Razão $t_{\text{Cho}}/t_{\text{Gauss}}$ por matriz.}
+  \label{tab:razao}
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{lrr}
+    \toprule
+    \textbf{Matriz} & \textbf{$n$} & \textbf{Razão medida} \\
+    \midrule
+    \texttt{bcsstk03}  & 112  & 0{,}63 \\
+    \texttt{bcsstk04}  & 132  & 0{,}67 \\
+    \texttt{494\_bus}  & 494  & 0{,}55 \\
+    \texttt{nos6}      & 675  & 0{,}55 \\
+    \texttt{1138\_bus} & 1138 & 0{,}549 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+ 
+Para $n$ grande, a razão converge ao valor teórico de $0{,}5$, confirmando
+experimentalmente a previsão assintótica. Para matrizes pequenas, o overhead constante
+das implementações em Python afasta levemente o valor medido do limite teórico.
+ 
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Conclusões}
+% ══════════════════════════════════════════════════════════════════════════════
+ 
+Os experimentos realizados permitem as seguintes conclusões:
+ 
+\begin{enumerate}
+  \item \textbf{Cholesky é $\approx 2\times$ mais rápido que Gauss/LU} para matrizes
+    SPD, em perfeito acordo com a previsão teórica $n^3/3$ vs.\ $2n^3/3$.
+ 
+  \item \textbf{Jacobi e Gauss-Seidel falharam em algumas das doze matrizes}, pois
+    falta de diagonal dominância e mal condicionamento desfavorecem a convergência dos
+    métodos iterativos clássicos.
+    Para matrizes SPD mal-condicionadas, métodos diretos
+    — especialmente Cholesky — são a escolha prática segura.
+ 
+  \item \textbf{Python puro vs.\ NumPy/SciPy:} a precisão numérica é muito próxima em
+    ambas as abordagens; o ganho de velocidade de até $632\times$ das bibliotecas
+    provém exclusivamente do uso de rotinas BLAS/LAPACK compiladas.
+\end{enumerate}
+ 
+% ══════════════════════════════════════════════════════════════════════════════
+\section*{Reprodutibilidade}
+% ══════════════════════════════════════════════════════════════════════════════
+\addcontentsline{toc}{section}{Reprodutibilidade}
+ 
+Para reproduzir todos os resultados basta executar:
+ 
+\begin{verbatim}
+python main.py
+\end{verbatim}
+ 
+O script lê as seis matrizes em \texttt{Matrizes de Teste/}, roda os oito métodos em
+cada uma, gera os arquivos \texttt{.txt} e \texttt{.png} em
+\texttt{Resultados/<matriz>/} e produz o sumário comparativo em
+\texttt{Resultados/sumario.txt}. O tempo total de execução é de aproximadamente 110 s
+na máquina de teste. Para adicionar uma nova matriz, basta depositar o arquivo
+\texttt{.mtx} em \texttt{Matrizes de Teste/} e incluí-lo na lista em
+\texttt{main.py}.
+ 
+% ══════════════════════════════════════════════════════════════════════════════
+\end{document}
