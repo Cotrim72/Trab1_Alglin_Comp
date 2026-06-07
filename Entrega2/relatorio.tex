@@ -48,7 +48,7 @@ O Método dos Gradientes Conjugados (CG -- \textit{Conjugate Gradient}) é um do
 \begin{equation}
     A x = b
 \end{equation}
-onde $A \in \mathbb{R}^{n \times n}$ representa uma matriz simétrica e definida positiva (SDP), $b \in \mathbb{R}^n$ é o vetor de termos independentes, e $x \in \mathbb{R}^n$ é o vetor de incógnitas a ser computado.
+onde $A \in \mathbb{R}^{n \times n}$ representa uma matriz simétrica e positiva definida (SPD), $b \in \mathbb{R}^n$ é o vetor de termos independentes, e $x \in \mathbb{R}^n$ é o vetor de incógnitas a ser computado.
 
 Ao contrário dos métodos diretos tradicionais como a Eliminação de Gauss ou a Fatoração de Cholesky, cuja complexidade computacional é de ordem $\mathcal{O}(n^3)$, o método dos Gradientes Conjugados converge teoricamente no espaço de no máximo $n$ passos (em aritmética exata). O custo por iteração é dominado pelo produto matriz-vetor, gerando uma complexidade aproximada de $\mathcal{O}(n^2)$ para matrizes cheias ou $\mathcal{O}(m)$ para matrizes esparsas estruturadas com $m$ elementos não nulos, tornando-o ideal para problemas físicos modelados por equações diferenciais.
 
@@ -87,7 +87,7 @@ Para validar o comportamento numérico e a taxa de convergência do algoritmo do
     \item Aplicação de um filtro de esparsidade comandado pelo parâmetro de limiar $\tau$: qualquer elemento fora da diagonal principal que satisfaça $|a_{ij}| > \tau$ é substituído pelo valor zero.
 \end{enumerate}
 
-Como descrito na literatura teórica, para valores de $\tau$ muito próximos de zero, o sistema gera uma matriz bem-condicionada e estritamente positiva definida. À medida que o valor de $\tau$ aumenta, tanto a densidade de elementos não nulos quanto o número de condicionamento pioram, fazendo com que a matriz perca a propriedade de ser definida positiva para limiares mais altos (como $\tau = 0.2$).
+Como descrito na literatura teórica, para valores de $\tau$ muito próximos de zero, o sistema gera uma matriz bem-condicionada e estritamente positiva definida. À medida que o valor de $\tau$ aumenta, tanto a densidade de elementos não nulos quanto o número de condicionamento pioram, fazendo com que a matriz perca a propriedade de ser positiva definida para limiares mais altos (como $\tau = 0.2$).
 
 \subsection{Análise das Propriedades da Matriz}
 Antes da execução dos métodos numéricos, realizou-se uma análise estrutural e espectral da matriz gerada para cada valor do parâmetro $\tau$. A Tabela 1 documenta o número de condicionamento ($\kappa(A)$), a densidade de elementos não-nulos e a verificação matemática da condição de matriz Simétrica Positiva Definida (SPD).
@@ -116,7 +116,7 @@ Os resultados empíricos obtidos demonstram que o aumento do limiar $\tau$ aumen
 Além disso, a partir de $\tau = 0.10$ a matriz deixa de ser positiva definida e a partir de $\tau = 0.05$ ela deixa de ser diagonal dominante.
 
 \subsection{Resultados e Comparação entre Métodos}
-O sistema linear $Ax = b$ foi resolvido adotando-se um vetor $x$ aleatório, usando o valor de $Ax$ como valor de $b$ e tomando um vetor de aproximação inicial $x_0 = \mathbf{1}$. Foram confrontados os desempenhos do Método dos Gradientes Conjugados (CG), Método de Jacobi e Método de Gauss-Seidel sob uma tolerância estipulada de $\epsilon = 10^{-8}$ ou um limite máximo de $2000$ iterações. 
+O sistema linear $Ax = b$ foi resolvido adotando-se um vetor $x$ aleatório, usando o valor de $Ax$ como valor de $b$ e tomando um vetor de aproximação inicial $x_0$ com $1$ em todas as entradas. Foram confrontados os desempenhos do Método dos Gradientes Conjugados (CG), Método de Jacobi e Método de Gauss-Seidel sob uma tolerância estipulada de $\epsilon = 10^{-8}$ ou um limite máximo de $2000$ iterações. 
 
 A Tabela 2 detalha o número de iterações necessárias para a convergência de cada método em seus respectivos cenários.
 
@@ -186,7 +186,7 @@ Além disso, diferente das matrizes anteriores, a matriz com valor de $\tau = 0.
 \subsubsection{Matriz $\tau = 0.50$}
 \includegraphics[width=0.9\linewidth]{gradientes_conjugados_0.5.png}
 
-Os gráficos acima ilustram perfeitamente o comportamento de estagnação e oscilação caótica do Método dos Gradientes Conjugados quando aplicado à matriz indefinida com limiar $\tau = 0.50$, atingindo o limite configurado de 2000 iterações sem alcançar a convergência. Ao contrário do cenário estável visto anteriormente, a perda da propriedade definida positiva da matriz introduz autovalores negativos ou nulos, o que sabota a minimização consistente da energia do sistema. Como consequência, o algoritmo perde a sua trajetória ótima de descida e entra em um regime de busca desordenada, fazendo com que o resíduo fique "preso" e flutue de forma ruidosa em uma faixa alta de erro, majoritariamente entre $10^{-1}$ e $10^{-3}$.
+Os gráficos acima ilustram perfeitamente o comportamento de estagnação e oscilação caótica do Método dos Gradientes Conjugados quando aplicado à matriz indefinida com limiar $\tau = 0.50$, atingindo o limite configurado de 2000 iterações sem alcançar a convergência. Ao contrário do cenário estável visto anteriormente, a perda da propriedade positiva definida da matriz introduz autovalores negativos ou nulos, o que sabota a minimização consistente da energia do sistema. Como consequência, o algoritmo perde a sua trajetória ótima de descida e entra em um regime de busca desordenada, fazendo com que o resíduo fique "preso" e flutue de forma ruidosa em uma faixa alta de erro, majoritariamente entre $10^{-1}$ e $10^{-3}$.
 
 \subsubsection{Matriz $\tau = 1.00$}
 \includegraphics[width=0.9\linewidth]{gradientes_conjugados_1.png}
